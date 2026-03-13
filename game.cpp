@@ -15,7 +15,9 @@
 #include "fonts.h"
 #include "globals.h"
 #include "player.h"
+#include "zombie.h"   
 #include "bullet.h"
+#include "collision.h"
 
 // timers from timers.cpp
 const double physicsRate = 1.0 / 60.0;
@@ -28,6 +30,7 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 Global gl;
 Player player;
+Zombie zombie;                  // change to be an array
 BulletManager bulletManager;
 
 // X11 wrapper
@@ -174,6 +177,7 @@ int main()
     logOpen();
     init_opengl();
     srand(time(NULL));
+    zombie.init();
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
 
@@ -260,6 +264,8 @@ int check_keys(XEvent *e)
 void physics()
 {
     player.update();
+    zombie.update();
+    checkCollisions();
     bulletManager.update(player);
 }
 
@@ -284,5 +290,6 @@ void render()
     ggprint(&r, 16, 16, 0x00ffffff, "Bullets: %d\n", bulletManager.nbullets);
 
     player.render();
+    zombie.render();
     bulletManager.render();
 }

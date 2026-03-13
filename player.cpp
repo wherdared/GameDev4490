@@ -5,8 +5,8 @@
 
 Player::Player()
 {
-    pos[0] = 400.0f;
-    pos[1] = 300.0f;
+    pos[0] =  gl.xres/2;      //400.0f;
+    pos[1] =  gl.yres/2;      //300.0f;
     pos[2] = 0.0f;
     w = 40.0f;
     h = 40.0f;
@@ -40,7 +40,7 @@ void Player::update()
 
     pos[0] += moveX * speed;
     pos[1] += moveY * speed;
-
+    
     float halfW = w * 0.5f;
     float halfH = h * 0.5f;
 
@@ -58,6 +58,7 @@ void Player::update()
     float dx = (float)gl.mouse_x - pos[0];
     float dy = (float)gl.mouse_y - pos[1];
     angle = atan2(dy, dx);
+    
 }
 
 void Player::render()
