@@ -3,6 +3,10 @@
 #include "player.h"
 #include "globals.h"
 
+#ifndef PI
+#define PI 3.14159265358979323846
+#endif
+
 Player::Player()
 {
     pos[0] = 400.0f;
@@ -62,11 +66,16 @@ void Player::update()
 
 void Player::render()
 {
-    glColor3fv(color);
     glPushMatrix();
     glTranslatef(pos[0], pos[1], pos[2]);
 
+    // Rotate player so its front faces the mouse
+    // Our "front" is the +x direction, so convert radians to degrees
+    float angleDegrees = angle * 180.0f / (float)PI;
+    glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
+
     // Draw player body
+    glColor3fv(color);
     glBegin(GL_QUADS);
         glVertex2f(-w / 2.0f, -h / 2.0f);
         glVertex2f(-w / 2.0f,  h / 2.0f);
@@ -75,22 +84,31 @@ void Player::render()
     glEnd();
 
     // Draw center point
+    glPointSize(5.0f);
     glColor3f(1.0f, 0.0f, 0.0f);
     glBegin(GL_POINTS);
         glVertex2f(0.0f, 0.0f);
     glEnd();
+    glPointSize(1.0f);
+
+    // Draw small barrel/front marker
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+        glVertex2f(w / 2.0f - 2.0f, -4.0f);
+        glVertex2f(w / 2.0f - 2.0f,  4.0f);
+        glVertex2f(w / 2.0f + 12.0f, 4.0f);
+        glVertex2f(w / 2.0f + 12.0f, -4.0f);
+    glEnd();
 
     // Draw aim line
     float aimLength = 35.0f;
-    float ax = cos(angle) * aimLength;
-    float ay = sin(angle) * aimLength;
-
     glLineWidth(3.0f);
     glColor3f(1.0f, 1.0f, 0.0f);
     glBegin(GL_LINES);
         glVertex2f(0.0f, 0.0f);
-        glVertex2f(ax, ay);
+        glVertex2f(aimLength, 0.0f);
     glEnd();
+    glLineWidth(1.0f);
 
     glPopMatrix();
 
@@ -103,3 +121,4 @@ void Player::render()
         glVertex2f(gl.mouse_x, gl.mouse_y + 8);
     glEnd();
 }
+
