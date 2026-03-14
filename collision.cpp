@@ -32,18 +32,22 @@ void checkCollisions() {
         // horizontal collision - stop zombie on x axis
         if (dx > 0) {
             zombie.pos[0] = pLeft - zombie.w / 2.0f;
+            player.pos[0] = zRight + player.w / 2.0f;
             player.pos[0] += pushSpeed;
         } else {
             zombie.pos[0] = pRight + zombie.w / 2.0f;
+            player.pos[0] = zLeft - player.w / 2.0f;
             player.pos[0] -= pushSpeed;
         }
     } else {
         // vertical collision - stop zombie on y axis
         if (dy > 0) {
             zombie.pos[1] = pBottom - zombie.h / 2.0f;
+            player.pos[1] = zTop + player.h / 2.0f;
             player.pos[1] += pushSpeed;
         } else {
             zombie.pos[1] = pTop + zombie.h / 2.0f;
+            player.pos[1] = zBottom - player.h / 2.0f;
             player.pos[1] -= pushSpeed;
         }
     }
@@ -51,22 +55,23 @@ void checkCollisions() {
     // clamp player to screen and push zombie back if player hits wall
     float halfW = player.w / 2.0f;
     float halfH = player.h / 2.0f;
+    float pushExtra = 3.0f;
 
     if (player.pos[0] < halfW) {
         player.pos[0] = halfW;
-        zombie.pos[0] = halfW + player.w / 2.0f + zombie.w / 2.0f;
+        zombie.pos[0] = halfW + player.w / 2.0f + zombie.w / 2.0f + pushExtra;
     }
     if (player.pos[0] > gl.xres - halfW) {
         player.pos[0] = gl.xres - halfW;
-        zombie.pos[0] = gl.xres - halfW - player.w / 2.0f - zombie.w / 2.0f;
+        zombie.pos[0] = gl.xres - halfW - player.w / 2.0f - zombie.w / 2.0f - pushExtra;
     }
     if (player.pos[1] < halfH) {
         player.pos[1] = halfH;
-        zombie.pos[1] = halfH + player.h / 2.0f + zombie.h / 2.0f;
+        zombie.pos[1] = halfH + player.h / 2.0f + zombie.h / 2.0f + pushExtra;
     }
     if (player.pos[1] > gl.yres - halfH) {
         player.pos[1] = gl.yres - halfH;
-        zombie.pos[1] = gl.yres - halfH - player.h / 2.0f - zombie.h / 2.0f;
+        zombie.pos[1] = gl.yres - halfH - player.h / 2.0f - zombie.h / 2.0f - pushExtra;
     }
     
 }
