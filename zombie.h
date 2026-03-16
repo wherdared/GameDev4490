@@ -10,6 +10,7 @@ class Zombie {
         float speed;        // should be slower than player
         float angle;
         float color[3];     // show a color for rn different than the player
+        float health;
 
         Zombie();
 

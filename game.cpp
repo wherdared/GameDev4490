@@ -1,6 +1,6 @@
 //
 // program: game.cpp
-// modified by: Bryan Rodriguez
+// modified by: Bryan Rodriguez, Ibran Perez, Ramon Moreno
 // purpose: CMPS 4490 top-down survival arena starting point
 //
 

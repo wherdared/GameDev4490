@@ -17,9 +17,13 @@ Zombie::Zombie() {
     color[0] = 1.0f;  
     color[1] = 0.0f;    
     color[2] = 0.0f;
+    health = 100;         // health for each zombie
     
 }
 void Zombie::init() {
+    health = 100.0f;        // remove this line when i am spawning in multiple zombies
+
+
     float minDist = 300.0f;  // makes sure to spawn the zombie not to close to the player
     
     // get them to spawn randomly outside somewhat far from the player
