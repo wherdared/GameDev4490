@@ -1,8 +1,12 @@
 #include <cmath>
 #include <GL/glx.h>
+#include <ctime>
 #include "zombie.h"
 #include "globals.h"
 #include "player.h"
+
+extern double timeDiff(struct timespec *start, struct timespec *end);
+extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 extern Player player;
 
@@ -18,11 +22,14 @@ Zombie::Zombie() {
     color[1] = 0.0f;    
     color[2] = 0.0f;
     health = 100;         // health for each zombie
-    
+    alive = false;
+    spawnTimer = {0, 0};
 }
 void Zombie::init() {
     health = 100.0f;        // remove this line when i am spawning in multiple zombies
-
+    alive = false;
+    spawnTimer = {0, 0};
+    clock_gettime(CLOCK_REALTIME, &spawnTimer);
 
     float minDist = 300.0f;  // makes sure to spawn the zombie not to close to the player
     
@@ -46,6 +53,18 @@ void Zombie::init() {
 }
 
 void Zombie::update() {
+    // wait a moment to spawn the zombie so that it's not instantly 
+    if (!alive) {
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        double elapsed = timeDiff(&spawnTimer, &now);
+        if (elapsed >= 0.43) {
+            alive = true;
+        }
+        return;
+    }
+
+
     // zombies should just move to to position of where the player is currently at
     float dx = player.pos[0] - pos[0];
     float dy = player.pos[1] - pos[1];
@@ -64,6 +83,8 @@ void Zombie::update() {
 }
 
 void Zombie::render() {
+    if (!alive) return;
+
     glColor3fv(color);
     glPushMatrix();
     glTranslatef(pos[0], pos[1], pos[2]);

@@ -11,6 +11,8 @@ class Zombie {
         float angle;
         float color[3];     // show a color for rn different than the player
         float health;
+        bool alive;
+        struct timespec spawnTimer;
 
         Zombie();
 
