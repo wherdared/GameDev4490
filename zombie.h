@@ -3,6 +3,8 @@
 
 #include "globals.h"
 
+const int MAX_ZOMBIES = 25;     // max amount of zombies that can be alive at a time not per round
+
 class Zombie {
     public:
         Vec pos;

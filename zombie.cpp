@@ -16,7 +16,7 @@ Zombie::Zombie() {
     pos[2] = 0.0f;     // this position doesn't matter
     w = 40.0f;
     h = 40.0f;
-    speed = 1.95;        // might have to change this
+    speed = 1.32;        // might have to change this
     angle = 0.0f;
     color[0] = 1.0f;  
     color[1] = 0.0f;    
@@ -55,6 +55,7 @@ void Zombie::init() {
 void Zombie::update() {
     // wait a moment to spawn the zombie so that it's not instantly 
     if (!alive) {
+        if (health <= 0.0f) return; // dead, dont revive zombie
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
         double elapsed = timeDiff(&spawnTimer, &now);
@@ -90,7 +91,7 @@ void Zombie::render() {
     glTranslatef(pos[0], pos[1], pos[2]);
 
     // Draw Zombie
-    glBegin(GL_QUADS);
+    glBegin(GL_LINE_LOOP);          // change this to an outline to kinda make it like a hitbox
         glVertex2f(-w / 2.0f, -h / 2.0f);
         glVertex2f(-w / 2.0f,  h / 2.0f);
         glVertex2f( w / 2.0f,  h / 2.0f);

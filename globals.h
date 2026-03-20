@@ -15,6 +15,7 @@ public:
     int mouse_x;
     int mouse_y;
     int mouse_cursor_on;
+    int nframes, fps;
 
     Global() {
         xres = 1200; //800;
@@ -23,6 +24,8 @@ public:
         mouse_x = xres / 2;
         mouse_y = yres / 2;
         mouse_cursor_on = 1;
+        nframes = 1;
+        fps = 0;
     }
 };
 

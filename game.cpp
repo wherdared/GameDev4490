@@ -30,8 +30,10 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 Global gl;
 Player player;
-Zombie zombie;                  // change to be an array
 BulletManager bulletManager;
+Zombie zombie[MAX_ZOMBIES];
+int nzombies = 0;
+struct timespec zombieSpawnTimer;
 
 // X11 wrapper
 class X11_wrapper {
@@ -177,9 +179,13 @@ int main()
     logOpen();
     init_opengl();
     srand(time(NULL));
-    zombie.init();
+    zombie[0].init();
+    nzombies = 1;
+    clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
+
+    int seconds = time(NULL);
 
     int done = 0;
     while (!done) {
@@ -201,7 +207,17 @@ int main()
         }
 
         render();
+        
+        ++gl.nframes;
+        int tmp = time(NULL);
+        if (seconds != tmp) {
+            gl.fps = gl.nframes;
+            gl.nframes = 0;
+            seconds = tmp;
+        }
+
         x11.swapBuffers();
+        usleep(200);
     }
 
     cleanup_fonts();
@@ -264,7 +280,20 @@ int check_keys(XEvent *e)
 void physics()
 {
     player.update();
-    zombie.update();
+
+    // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    double elapsed = timeDiff(&zombieSpawnTimer, &now);
+    if (elapsed >= 1.0 && nzombies < MAX_ZOMBIES) {
+        zombie[nzombies].init();
+        nzombies++;
+        clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
+    }
+    for (int i=0; i<nzombies; i++)
+        zombie[i].update();
+    
+    
     checkCollisions();
     bulletManager.update(player);
 }
@@ -288,8 +317,10 @@ void render()
     ggprint(&r, 16, 16, 0x00ffffff, "Mouse position: (%d, %d)\n",
         gl.mouse_x, gl.mouse_y);
     ggprint(&r, 16, 16, 0x00ffffff, "Bullets: %d\n", bulletManager.nbullets);
+    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
 
     player.render();
-    zombie.render();
+    for (int i=0; i<nzombies; i++)
+        zombie[i].render();
     bulletManager.render();
 }
