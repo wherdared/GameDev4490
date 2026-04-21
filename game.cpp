@@ -38,7 +38,6 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 Global gl;
 Player player;
-Zombie zombie;                  
 BulletManager bulletManager;
 Zombie zombie[MAX_ZOMBIES];
 int nzombies = 0;
@@ -403,7 +402,7 @@ int main()
         }
 
         x11.swapBuffers();
-        usleep(200);
+        //usleep(200);
     }
 
     cleanup_fonts();
@@ -564,16 +563,15 @@ void render()
 
     glClearColor(0.0, 0.0, 0.0, 1.0); 
     glClear(GL_COLOR_BUFFER_BIT);
+    
     Rect r;
-
-    glClear(GL_COLOR_BUFFER_BIT);
-
     renderBackground();
 
     r.bot = gl.yres - 20;
     r.left = 10;
     r.center = 0;
     ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
+    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
 
     if (spritesLoaded && currentPlayerSprite) {
         float angleDegrees = player.angle * 180.0f / (float)PI;
@@ -583,21 +581,10 @@ void render()
     }
 
     glDisable(GL_TEXTURE_2D);
-    zombie.render();
-    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
-
-    player.render();
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
+    
     bulletManager.render();
-
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glBegin(GL_LINES);
-        glVertex2f(gl.mouse_x - 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x + 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x, gl.mouse_y - 8);
-        glVertex2f(gl.mouse_x, gl.mouse_y + 8);
-    glEnd();
-
+    renderMouseCrosshair();
     glEnable(GL_TEXTURE_2D);
 }

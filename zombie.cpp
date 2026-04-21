@@ -16,7 +16,7 @@ Zombie::Zombie() {
     pos[2] = 0.0f;     // this position doesn't matter
     w = 40.0f;
     h = 40.0f;
-    speed = 1.32;        // might have to change this
+    speed = 0.94;        // might have to change this (original: 1.32)
     angle = 0.0f;
     color[0] = 1.0f;  
     color[1] = 0.0f;    

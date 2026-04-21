@@ -91,7 +91,7 @@ void checkCollisions() {
                 // for now each bullet will deal 34 damage but later we can change this 
                 // if we decide to add more weapons, so each weapon 
                 // will deal different damage
-                zombie[j].health -= 34.0f;
+                zombie[j].health -= 50.0f;      // dies in two bullets
                 //printf("zombie[%d] health: %1f\n", j, zombie[j].health);    
 
                 // delete bullet
