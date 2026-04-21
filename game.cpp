@@ -1,6 +1,7 @@
 //
 // program: game.cpp
 // purpose: CMPS 4490 top-down survival arena
+// modified by: Bryan Rodriguez, Ibran Perez, Ramon Moreno
 //
 
 #include <iostream>
@@ -24,6 +25,7 @@
 #include "bullet.h"
 #include "collision.h"
 #include "sprite.h"
+#include "title.h"
 
 // timers from timers.cpp
 const double physicsRate = 1.0 / 60.0;
@@ -38,6 +40,9 @@ Global gl;
 Player player;
 Zombie zombie;                  
 BulletManager bulletManager;
+Zombie zombie[MAX_ZOMBIES];
+int nzombies = 0;
+struct timespec zombieSpawnTimer;
 
 GLuint backgroundTex = 0;
 
@@ -253,7 +258,7 @@ public:
         Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
         swa.colormap = cmap;
         swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-            PointerMotionMask | MotionNotify | ButtonPress | ButtonRelease |
+            PointerMotionMask | MotionNotify | ButtonPressMask | ButtonReleaseMask |
             StructureNotifyMask | SubstructureNotifyMask;
 
         unsigned int winops = CWBorderPixel | CWColormap | CWEventMask;
@@ -358,13 +363,18 @@ int main()
     loadBackground();
     loadPlayerSprites();
 
+    initTitle();
     srand(time(NULL));
-    zombie.init();
+    zombie[0].init();
+    nzombies = 1;
+    clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
 
+    int seconds = time(NULL);
+
     int done = 0;
-    while (!done) {
+    while (!done && !gl.done) {
         while (x11.getXPending()) {
             XEvent e = x11.getXNextEvent();
             x11.check_resize(&e);
@@ -383,7 +393,17 @@ int main()
         }
 
         render();
+        
+        ++gl.nframes;
+        int tmp = time(NULL);
+        if (seconds != tmp) {
+            gl.fps = gl.nframes;
+            gl.nframes = 0;
+            seconds = tmp;
+        }
+
         x11.swapBuffers();
+        usleep(200);
     }
 
     cleanup_fonts();
@@ -419,6 +439,14 @@ void check_mouse(XEvent *e)
     if (e->type == MotionNotify) {
         gl.mouse_x = e->xmotion.x;
         gl.mouse_y = gl.yres - e->xmotion.y;
+        gl.mouse_y_down = e->xmotion.y; 
+    }
+    if (e->type == ButtonPress) {
+        if (e->xbutton.button == 1) { 
+            if (gl.state == STATE_TITLE) {
+                checkTitleClick(e->xbutton.x, e->xbutton.y);
+            }
+        }
     }
 }
 
@@ -448,8 +476,26 @@ int check_keys(XEvent *e)
 
 void physics()
 {
+    if (gl.state == STATE_TITLE) {
+        updateTitle((float)physicsRate);
+        return;
+    }
+    
     player.update();
-    zombie.update();
+
+    // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    double elapsed = timeDiff(&zombieSpawnTimer, &now);
+    if (elapsed >= 1.0 && nzombies < MAX_ZOMBIES) {
+        zombie[nzombies].init();
+        nzombies++;
+        clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
+    }
+    for (int i=0; i<nzombies; i++)
+        zombie[i].update();
+    
+    
     checkCollisions();
     bulletManager.update(player);
 
@@ -511,6 +557,13 @@ void renderMouseCrosshair()
 
 void render()
 {
+    if (gl.state == STATE_TITLE) {
+        renderTitle();
+        return;
+    }
+
+    glClearColor(0.0, 0.0, 0.0, 1.0); 
+    glClear(GL_COLOR_BUFFER_BIT);
     Rect r;
 
     glClear(GL_COLOR_BUFFER_BIT);
@@ -531,6 +584,11 @@ void render()
 
     glDisable(GL_TEXTURE_2D);
     zombie.render();
+    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+
+    player.render();
+    for (int i=0; i<nzombies; i++)
+        zombie[i].render();
     bulletManager.render();
 
     glColor3f(1.0f, 1.0f, 1.0f);

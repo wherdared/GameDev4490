@@ -3,6 +3,7 @@
 
 #include "player.h"
 #include "zombie.h"
+#include "bullet.h"
 
 void checkCollisions();
 
