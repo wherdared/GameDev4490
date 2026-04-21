@@ -18,6 +18,7 @@
 #include "zombie.h"   
 #include "bullet.h"
 #include "collision.h"
+#include "title.h"
 
 // timers from timers.cpp
 const double physicsRate = 1.0 / 60.0;
@@ -79,7 +80,7 @@ public:
         Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
         swa.colormap = cmap;
         swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-            PointerMotionMask | MotionNotify | ButtonPress | ButtonRelease |
+            PointerMotionMask | MotionNotify | ButtonPressMask | ButtonReleaseMask |
             StructureNotifyMask | SubstructureNotifyMask;
 
         unsigned int winops = CWBorderPixel | CWColormap | CWEventMask;
@@ -178,6 +179,7 @@ int main()
 {
     logOpen();
     init_opengl();
+    initTitle();
     srand(time(NULL));
     zombie[0].init();
     nzombies = 1;
@@ -188,7 +190,7 @@ int main()
     int seconds = time(NULL);
 
     int done = 0;
-    while (!done) {
+    while (!done && !gl.done) {
         while (x11.getXPending()) {
             XEvent e = x11.getXNextEvent();
             x11.check_resize(&e);
@@ -250,6 +252,14 @@ void check_mouse(XEvent *e)
     if (e->type == MotionNotify) {
         gl.mouse_x = e->xmotion.x;
         gl.mouse_y = gl.yres - e->xmotion.y;
+        gl.mouse_y_down = e->xmotion.y; 
+    }
+    if (e->type == ButtonPress) {
+        if (e->xbutton.button == 1) { 
+            if (gl.state == STATE_TITLE) {
+                checkTitleClick(e->xbutton.x, e->xbutton.y);
+            }
+        }
     }
 }
 
@@ -279,6 +289,11 @@ int check_keys(XEvent *e)
 
 void physics()
 {
+    if (gl.state == STATE_TITLE) {
+        updateTitle((float)physicsRate);
+        return;
+    }
+    
     player.update();
 
     // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
@@ -300,6 +315,13 @@ void physics()
 
 void render()
 {
+    if (gl.state == STATE_TITLE) {
+        renderTitle();
+        return;
+    }
+
+    glClearColor(0.0, 0.0, 0.0, 1.0); 
+    glClear(GL_COLOR_BUFFER_BIT);
     Rect r;
 
     glClear(GL_COLOR_BUFFER_BIT);
