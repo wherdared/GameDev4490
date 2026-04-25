@@ -26,6 +26,7 @@
 #include "collision.h"
 #include "sprite.h"
 #include "title.h"
+#include "rounds.h"
 
 // timers from timers.cpp
 const double physicsRate = 1.0 / 60.0;
@@ -41,9 +42,14 @@ Player player;
 BulletManager bulletManager;
 Zombie zombie[MAX_ZOMBIES];
 int nzombies = 0;
-struct timespec zombieSpawnTimer;
+//struct timespec zombieSpawnTimer;
 
 GLuint backgroundTex = 0;
+
+Sprite zombieIdle;
+Sprite zombieMove;
+Sprite zombieAttack;
+bool zombieSpritesLoaded = false;
 
 Sprite playerIdle;
 Sprite playerMove;
@@ -91,7 +97,15 @@ std::string remapSpriteFilename(const std::string &path)
         return path;
 
     std::string alt;
-    if (folder.find("idle") != std::string::npos) {
+    if (folder.find("zombie") != std::string::npos || folder.find("zombies") != std::string::npos) {
+        if (folder.find("idle") != std::string::npos) {
+            alt = folder + "/skeleton-idle_" + std::to_string(frameNum) + ".png";
+        } else if (folder.find("move") != std::string::npos) {
+            alt = folder + "/skeleton-move_" + std::to_string(frameNum) + ".png";
+        } else if (folder.find("attack") != std::string::npos) {
+            alt = folder + "/skeleton-attack_" + std::to_string(frameNum) + ".png";
+        }
+    } else if (folder.find("idle") != std::string::npos) {
         alt = folder + "/survivor-idle_rifle_" + std::to_string(frameNum) + ".png";
     } else if (folder.find("move") != std::string::npos) {
         alt = folder + "/survivor-move_rifle_" + std::to_string(frameNum) + ".png";
@@ -100,6 +114,7 @@ std::string remapSpriteFilename(const std::string &path)
     } else {
         return path;
     }
+
 
     if (fileExists(alt))
         return alt;
@@ -200,6 +215,29 @@ void loadPlayerSprites()
     } else {
         std::cout << "Player sprites failed. Using old player render." << std::endl;
     }
+}
+
+void loadZombieSprites()
+{
+    zombieIdle.load("zombies/idle", 17);
+    zombieMove.load("zombies/move", 17);
+    zombieAttack.load("zombies/attack", 9);
+
+    zombieIdle.frameDelay   = 0.09f;
+    zombieMove.frameDelay   = 0.06f;
+    zombieAttack.frameDelay = 0.07f;
+
+    zombieIdle.frameWidth   = zombieMove.frameWidth   = zombieAttack.frameWidth  = 80;
+    zombieIdle.frameHeight  = zombieMove.frameHeight  = zombieAttack.frameHeight = 80;
+
+    zombieSpritesLoaded = (zombieIdle.tex[0] != 0) &&
+                          (zombieMove.tex[0] != 0) &&
+                          (zombieAttack.tex[0] != 0);
+
+    if (zombieSpritesLoaded)
+        printf("zombie sprites loaded successfully\n");
+    else
+        printf("zombie sprites FAILED to load\n");
 }
 
 void setCurrentPlayerSprite(Sprite *s)
@@ -361,12 +399,12 @@ int main()
 
     loadBackground();
     loadPlayerSprites();
+    loadZombieSprites();
 
     initTitle();
     srand(time(NULL));
-    zombie[0].init();
-    nzombies = 1;
-    clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
+    roundManager.init();
+
     clock_gettime(CLOCK_REALTIME, &timePause);
     clock_gettime(CLOCK_REALTIME, &timeStart);
 
@@ -483,17 +521,9 @@ void physics()
     player.update();
 
     // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
-    struct timespec now;
-    clock_gettime(CLOCK_REALTIME, &now);
-    double elapsed = timeDiff(&zombieSpawnTimer, &now);
-    if (elapsed >= 1.0 && nzombies < MAX_ZOMBIES) {
-        zombie[nzombies].init();
-        nzombies++;
-        clock_gettime(CLOCK_REALTIME, &zombieSpawnTimer);
-    }
+    roundManager.update();
     for (int i=0; i<nzombies; i++)
         zombie[i].update();
-    
     
     checkCollisions();
     bulletManager.update(player);
@@ -566,13 +596,15 @@ void render()
     
     Rect r;
     renderBackground();
-
+    
     r.bot = gl.yres - 20;
     r.left = 10;
     r.center = 0;
     ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
     ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
-
+    ggprint(&r, 16, 16, 0x00ffffff, "Round: %i\n", roundManager.currentRound);
+    
+    // render player
     if (spritesLoaded && currentPlayerSprite) {
         float angleDegrees = player.angle * 180.0f / (float)PI;
         currentPlayerSprite->render(player.pos[0], player.pos[1], angleDegrees);
@@ -580,10 +612,14 @@ void render()
         player.render();
     }
 
+    // render zombies
     glDisable(GL_TEXTURE_2D);
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
-    
+    glDisable(GL_TEXTURE_2D);  // add this line
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+    // bullets and crosshair 
     bulletManager.render();
     renderMouseCrosshair();
     glEnable(GL_TEXTURE_2D);

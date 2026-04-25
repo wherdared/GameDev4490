@@ -1,14 +1,19 @@
 #include <cmath>
 #include <GL/glx.h>
 #include <ctime>
+#include <cstdio>
 #include "zombie.h"
 #include "globals.h"
 #include "player.h"
+#include "sprite.h"
 
 extern double timeDiff(struct timespec *start, struct timespec *end);
 extern void timeCopy(struct timespec *dest, struct timespec *source);
-
 extern Player player;
+extern Sprite zombieIdle;
+extern Sprite zombieMove;
+extern Sprite zombieAttack;
+extern bool zombieSpritesLoaded;
 
 Zombie::Zombie() {
     pos[0] = 0.0f;        // x
@@ -24,11 +29,20 @@ Zombie::Zombie() {
     health = 100;         // health for each zombie
     alive = false;
     spawnTimer = {0, 0};
+    currentSprite = NULL;
+
+    frameTimer = 0.0f;
+    currentFrame = 0;
 }
+
 void Zombie::init() {
     health = 100.0f;        // remove this line when i am spawning in multiple zombies
     alive = false;
     spawnTimer = {0, 0};
+
+    currentSprite = &zombieIdle;
+    frameTimer = 0.0f;
+    currentFrame = 0.0f;
     clock_gettime(CLOCK_REALTIME, &spawnTimer);
 
     float minDist = 300.0f;  // makes sure to spawn the zombie not to close to the player
@@ -81,21 +95,74 @@ void Zombie::update() {
     pos[1] += dy * speed;
 
     angle = atan2(dy, dx);
+
+    // switch sprite based on distance to player (just testing this for now)
+    if (zombieSpritesLoaded) {
+        float attackDist = 50.0f;   
+        if (dist <= attackDist) {
+            if (currentSprite != &zombieAttack) {
+                currentSprite = &zombieAttack;
+                frameTimer = 0.0f;
+                currentFrame = 0;
+            }
+        } else {
+            if (currentSprite != &zombieMove) {
+                currentSprite = &zombieMove;
+                frameTimer = 0.0f;
+                currentFrame = 0;
+            }
+        }
+
+        frameTimer += 1.0f / 60.0f;
+        if (frameTimer >= currentSprite->frameDelay) {
+            frameTimer = 0.0f;
+            currentFrame++;
+        if (currentFrame >= currentSprite->nframes)
+            currentFrame = 0;
+        }
+    }
 }
 
 void Zombie::render() {
     if (!alive) return;
 
-    glColor3fv(color);
-    glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
+    if (zombieSpritesLoaded && currentSprite) {
+        float angleDegrees = angle * 180.0f / (float)PI;
+        glPushMatrix();
+        glTranslatef(pos[0], pos[1], 0.0f);
+        glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
+        // these two lines make sprite background invisible
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        //---------------------------------------------------
+        glEnable(GL_TEXTURE_2D);
+        glBindTexture(GL_TEXTURE_2D, currentSprite->tex[currentFrame]);
 
-    // Draw Zombie
-    glBegin(GL_LINE_LOOP);          // change this to an outline to kinda make it like a hitbox
-        glVertex2f(-w / 2.0f, -h / 2.0f);
-        glVertex2f(-w / 2.0f,  h / 2.0f);
-        glVertex2f( w / 2.0f,  h / 2.0f);
-        glVertex2f( w / 2.0f, -h / 2.0f);
-    glEnd();
-    glPopMatrix();
+        float sw = currentSprite->frameWidth / 2.0f;
+        float sh = currentSprite->frameHeight / 2.0f;
+
+        glBegin(GL_QUADS);
+            glTexCoord2f(0,1); glVertex2f(-sw,-sh);
+            glTexCoord2f(0,0); glVertex2f(-sw, sh);
+            glTexCoord2f(1,0); glVertex2f( sw, sh);
+            glTexCoord2f(1,1); glVertex2f( sw,-sh);
+        glEnd();
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);                // added this line to get rid of black background
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glPopMatrix();
+    } else {
+        glColor3fv(color);
+        glPushMatrix();
+        glTranslatef(pos[0], pos[1], pos[2]);
+        
+        // Draw Zombie
+        glBegin(GL_LINE_LOOP);    // change this to an outline to kinda make it like a hitbox
+            glVertex2f(-w / 2.0f, -h / 2.0f);
+            glVertex2f(-w / 2.0f,  h / 2.0f);
+            glVertex2f( w / 2.0f,  h / 2.0f);
+            glVertex2f( w / 2.0f, -h / 2.0f);
+        glEnd();
+        glPopMatrix();
+    }
 }

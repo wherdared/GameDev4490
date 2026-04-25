@@ -2,6 +2,7 @@
 #include <cstdio>
 #include "collision.h"
 #include "globals.h"
+#include "rounds.h"
 
 extern Player player;
 extern BulletManager bulletManager;
@@ -103,6 +104,7 @@ void checkCollisions() {
                     //printf("zombie[%d] is dead!\n", j);
                     zombie[j].health = 0.0f;
                     zombie[j].alive = false;        // mark zombie as dead
+                    roundManager.zombiesKilled++;
                 }
 
                 continue;
