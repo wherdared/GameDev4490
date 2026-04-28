@@ -2,8 +2,9 @@
 #define ZOMBIE_H
 
 #include "globals.h"
+#include "sprite.h"
 
-const int MAX_ZOMBIES = 25;     // max amount of zombies that can be alive at a time not per round
+//const int MAX_ZOMBIES = 25;     // max amount of zombies that can be alive at a time not per round
 
 class Zombie {
     public:
@@ -15,6 +16,10 @@ class Zombie {
         float health;
         bool alive;
         struct timespec spawnTimer;
+        float frameTimer;
+        int currentFrame;
+        
+        Sprite *currentSprite;
 
         Zombie();
 
