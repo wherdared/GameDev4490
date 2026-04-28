@@ -440,7 +440,7 @@ int main()
         }
 
         x11.swapBuffers();
-        //usleep(200);
+        usleep(200);
     }
 
     cleanup_fonts();
@@ -518,6 +518,7 @@ void physics()
         return;
     }
     
+    gl.gameTimer += physicsRate;
     player.update();
 
     // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
@@ -569,6 +570,8 @@ void renderBackground()
         glTexCoord2f(1.0f, 0.0f); glVertex2f(gl.xres,   gl.yres);
         glTexCoord2f(1.0f, 1.0f); glVertex2f(gl.xres,   0.0f);
     glEnd();
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void renderMouseCrosshair()
@@ -597,13 +600,22 @@ void render()
     Rect r;
     renderBackground();
     
-    r.bot = gl.yres - 20;
+    r.bot = gl.yres - 40;
     r.left = 10;
     r.center = 0;
     ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
-    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+    ggprint(&r, 16, 16, 0x00ffffff, "\n");
+    ggprint(&r, 16, 16, 0x00ffffff, "Score: %i\n", gl.score);  // player score
     ggprint(&r, 16, 16, 0x00ffffff, "Round: %i\n", roundManager.currentRound);
-    
+    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+
+    // live timer
+    int totalSeconds = (int)gl.gameTimer;
+    int hours = totalSeconds / 3600;
+    int minutes = (totalSeconds % 3600) / 60;
+    int seconds = totalSeconds % 3600;
+    ggprint(&r, 16, 16, 0x00ffffff, "Time: %02i:%02i:%02i\n", hours, minutes, seconds);
+
     // render player
     if (spritesLoaded && currentPlayerSprite) {
         float angleDegrees = player.angle * 180.0f / (float)PI;
@@ -616,7 +628,7 @@ void render()
     glDisable(GL_TEXTURE_2D);
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
-    glDisable(GL_TEXTURE_2D);  // add this line
+    glDisable(GL_TEXTURE_2D);  
     glBindTexture(GL_TEXTURE_2D, 0);
 
     // bullets and crosshair 

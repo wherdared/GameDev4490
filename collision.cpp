@@ -93,8 +93,10 @@ void checkCollisions() {
                 // if we decide to add more weapons, so each weapon 
                 // will deal different damage
                 zombie[j].health -= 50.0f;      // dies in two bullets
-                //printf("zombie[%d] health: %1f\n", j, zombie[j].health);    
-
+                zombie[j].wasHit = true;        // show health bar
+                zombie[j].hitFlashTimer = 0.15f;    // flash for 0.15 seconds
+                gl.score += 10;         // 10 points per zombie hit
+                
                 // delete bullet
                 bulletManager.bullets[i] = bulletManager.bullets[bulletManager.nbullets - 1];
                 bulletManager.nbullets--;
@@ -105,6 +107,7 @@ void checkCollisions() {
                     zombie[j].health = 0.0f;
                     zombie[j].alive = false;        // mark zombie as dead
                     roundManager.zombiesKilled++;
+                    gl.score += 100;    // 100 bonus points per zombie killed
                 }
 
                 continue;

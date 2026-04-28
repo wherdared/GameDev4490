@@ -15,10 +15,12 @@ class Zombie {
         float color[3];     // show a color for rn different than the player
         float health;
         bool alive;
+        bool wasHit;        // when true it will display health bar
         struct timespec spawnTimer;
         float frameTimer;
         int currentFrame;
-        
+        float hitFlashTimer;        // zombie flashes red indicating it has been hit
+
         Sprite *currentSprite;
 
         Zombie();
