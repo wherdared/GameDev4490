@@ -38,7 +38,7 @@ extern void timeCopy(struct timespec *dest, struct timespec *source);
 
 Global gl;
 Player player;
-Zombie zombie;                  
+//Zombie zombie;                  
 BulletManager bulletManager;
 Zombie zombie[MAX_ZOMBIES];
 int nzombies = 0;
@@ -583,7 +583,7 @@ void render()
     }
 
     glDisable(GL_TEXTURE_2D);
-    zombie.render();
+    //zombie[i].render();
     ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
 
     player.render();
