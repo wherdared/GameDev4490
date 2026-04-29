@@ -27,6 +27,7 @@
 #include "sprite.h"
 #include "title.h"
 #include "rounds.h"
+#include "powerup.h"
 
 // timers from timers.cpp
 const double physicsRate = 1.0 / 60.0;
@@ -528,6 +529,7 @@ void physics()
     
     checkCollisions();
     bulletManager.update(player);
+    nukePowerUp.update();
 
     if (bulletTimerChanged(bulletManager.bulletTimer, lastBulletStamp)) {
         lastBulletStamp = bulletManager.bulletTimer;
@@ -628,6 +630,7 @@ void render()
     glDisable(GL_TEXTURE_2D);
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
+    nukePowerUp.render();
     glDisable(GL_TEXTURE_2D);  
     glBindTexture(GL_TEXTURE_2D, 0);
 

@@ -1,8 +1,10 @@
 #include <cmath>
 #include <cstdio>
+#include <cstdlib>      
 #include "collision.h"
 #include "globals.h"
 #include "rounds.h"
+#include "powerup.h"    
 
 extern Player player;
 extern BulletManager bulletManager;
@@ -26,7 +28,6 @@ void checkCollisions() {
     
         // -- player and zombie collision
         if (!(pRight < zLeft || pLeft > zRight || pTop < zBottom || pBottom > zTop)) {
-    
             // use center distance to determine which axis to resolve on
             float dx = player.pos[0] - zombie[j].pos[0];
             float dy = player.pos[1] - zombie[j].pos[1];
@@ -42,7 +43,7 @@ void checkCollisions() {
                     zombie[j].pos[0] = pRight + zombie[j].w / 2.0f;
                     player.pos[0] = zLeft - player.w / 2.0f;
                     player.pos[0] -= pushSpeed;
-            }
+                }
             } else {
                 // vertical collision - stop zombie on y axis
                 if (dy > 0) {
@@ -55,7 +56,6 @@ void checkCollisions() {
                     player.pos[1] -= pushSpeed;
                 }         
             }
-    
             // clamp player to screen and push zombie back if player hits wall
             float halfW = player.w / 2.0f;
             float halfH = player.h / 2.0f;
@@ -87,20 +87,18 @@ void checkCollisions() {
             // check if bullet is iniside zombie bounds
             if (b->pos[0] > zLeft && b->pos[0] < zRight &&
                 b->pos[1] > zBottom && b->pos[1] < zTop) {
-
                 // bullet hit zombie
-                // for now each bullet will deal 34 damage but later we can change this 
-                // if we decide to add more weapons, so each weapon 
+                // for now each bullet will deal 34 damage but later we can change this
+                // if we decide to add more weapons, so each weapon
                 // will deal different damage
-                zombie[j].health -= 50.0f;      // dies in two bullets
-                zombie[j].wasHit = true;        // show health bar
-                zombie[j].hitFlashTimer = 0.15f;    // flash for 0.15 seconds
-                gl.score += 10;         // 10 points per zombie hit
-                
-                // delete bullet
+                zombie[j].health -= 50.0f;   // dies in two bullets  
+                zombie[j].wasHit = true;     // show health bar
+                zombie[j].hitFlashTimer = 0.15f; // flash for 0.15 seconds
+                gl.score += 10;        // 10 points per zombie hit
+
+                //delete bullet
                 bulletManager.bullets[i] = bulletManager.bullets[bulletManager.nbullets - 1];
                 bulletManager.nbullets--;
-
                 // check if zombie is dead
                 if (zombie[j].health <= 0.0f) {
                     //printf("zombie[%d] is dead!\n", j);
@@ -108,12 +106,42 @@ void checkCollisions() {
                     zombie[j].alive = false;        // mark zombie as dead
                     roundManager.zombiesKilled++;
                     gl.score += 100;    // 100 bonus points per zombie killed
+                    
+                    if (!nukePowerUp.active && nukePowerUp.explosionTimer <= 0.0f) {
+                        if (rand() % 100 < 12) { 
+                            nukePowerUp.spawn(zombie[j].pos[0], zombie[j].pos[1]);
+                        }
+                    }
                 }
-
                 continue;
             }
             i++;
         }
     }
-}
 
+    if (nukePowerUp.active) {
+        float dx = player.pos[0] - nukePowerUp.pos[0];
+        float dy = player.pos[1] - nukePowerUp.pos[1];
+        float dist = sqrt(dx*dx + dy*dy);
+        
+        if (dist < (player.w / 2.0f + nukePowerUp.w / 2.0f)) {
+            nukePowerUp.active = false;
+            nukePowerUp.explosionTimer = nukePowerUp.maxExplosionTime; 
+            
+            for (int k = 0; k < nzombies; k++) {
+                if (zombie[k].alive && zombie[k].health > 0.0f) {
+                    float zdx = zombie[k].pos[0] - nukePowerUp.pos[0];
+                    float zdy = zombie[k].pos[1] - nukePowerUp.pos[1];
+                    float zdist = sqrt(zdx*zdx + zdy*zdy);
+                    
+                    if (zdist <= nukePowerUp.radius) {
+                        zombie[k].health = 0.0f;
+                        zombie[k].alive = false;
+                        roundManager.zombiesKilled++;
+                        gl.score += 100;
+                    }
+                }
+            }
+        }
+    }
+}
