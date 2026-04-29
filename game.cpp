@@ -43,7 +43,6 @@ Player player;
 BulletManager bulletManager;
 Zombie zombie[MAX_ZOMBIES];
 int nzombies = 0;
-//struct timespec zombieSpawnTimer;
 
 GLuint backgroundTex = 0;
 
@@ -248,6 +247,31 @@ void setCurrentPlayerSprite(Sprite *s)
         if (currentPlayerSprite) {
             currentPlayerSprite->currentFrame = 0;
             currentPlayerSprite->frameTimer = 0.0f;
+        }
+    }
+}
+
+
+// function for drawing text on the zombies
+struct FloatingText {
+    float x, y;
+    float timer;
+    int points;
+    bool active;
+};
+
+const int MAX_FLOATING = 50;
+FloatingText floatingTexts[MAX_FLOATING] = {};
+
+void spawnFloatingText(float x, float y, int points) {
+    for (int i = 0; i<MAX_FLOATING; i++) {
+        if (!floatingTexts[i].active) {
+            floatingTexts[i].x = x;
+            floatingTexts[i].y = y;
+            floatingTexts[i].timer = 1.0f;
+            floatingTexts[i].points = points;
+            floatingTexts[i].active = true;
+            break;
         }
     }
 }
@@ -527,6 +551,16 @@ void physics()
     for (int i=0; i<nzombies; i++)
         zombie[i].update();
     
+    // floating text update
+    for (int i = 0; i < MAX_FLOATING; i++) {
+        if (!floatingTexts[i].active) continue;
+        floatingTexts[i].y += 1.5f;
+        floatingTexts[i].timer -= (float)physicsRate;
+        if (floatingTexts[i].timer <= 0.0f)
+            floatingTexts[i].active = false;
+    }
+
+
     checkCollisions();
     bulletManager.update(player);
     nukePowerUp.update();
@@ -600,7 +634,7 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT);
     
     Rect r;
-    renderBackground();
+    //renderBackground();
     
     r.bot = gl.yres - 40;
     r.left = 10;
@@ -633,6 +667,22 @@ void render()
     nukePowerUp.render();
     glDisable(GL_TEXTURE_2D);  
     glBindTexture(GL_TEXTURE_2D, 0);
+
+    // floating text
+    glEnable(GL_TEXTURE_2D);
+    glColor3f(1.0f, 1.0f, 1.0f);
+    for (int i = 0; i < MAX_FLOATING; i++) {
+        if (!floatingTexts[i].active) continue;
+        Rect rf;
+        rf.bot = (int)floatingTexts[i].y;
+        rf.left = (int)floatingTexts[i].x;
+        rf.center = 0;
+        if (floatingTexts[i].points == 110)
+            ggprint(&rf, 14, 0, 0x00ff0000, "+%i", floatingTexts[i].points);
+        else {
+            ggprint(&rf, 14, 0, 0x00ffff00, "+%i", floatingTexts[i].points);
+        }
+    }
 
     // bullets and crosshair 
     bulletManager.render();

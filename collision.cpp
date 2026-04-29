@@ -10,6 +10,7 @@ extern Player player;
 extern BulletManager bulletManager;
 extern Zombie zombie[];
 extern int nzombies;
+extern void spawnFloatingText(float x, float y, int points);
 
 void checkCollisions() {
     // get edges of player and zombie
@@ -91,27 +92,31 @@ void checkCollisions() {
                 // for now each bullet will deal 34 damage but later we can change this
                 // if we decide to add more weapons, so each weapon
                 // will deal different damage
-                zombie[j].health -= 50.0f;   // dies in two bullets  
-                zombie[j].wasHit = true;     // show health bar
-                zombie[j].hitFlashTimer = 0.15f; // flash for 0.15 seconds
-                gl.score += 10;        // 10 points per zombie hit
+                zombie[j].health -= 50.0f;      // dies in two bullets
+                zombie[j].wasHit = true;        // show health bar
+                zombie[j].hitFlashTimer = 0.15f;    // flash for 0.15 seconds
 
-                //delete bullet
+                // delete bullet
                 bulletManager.bullets[i] = bulletManager.bullets[bulletManager.nbullets - 1];
                 bulletManager.nbullets--;
+                
                 // check if zombie is dead
                 if (zombie[j].health <= 0.0f) {
-                    //printf("zombie[%d] is dead!\n", j);
                     zombie[j].health = 0.0f;
                     zombie[j].alive = false;        // mark zombie as dead
                     roundManager.zombiesKilled++;
+                    
                     gl.score += 100;    // 100 bonus points per zombie killed
+                    spawnFloatingText(zombie[j].pos[0], zombie[j].pos[1] + 30.0f, 110);
                     
                     if (!nukePowerUp.active && nukePowerUp.explosionTimer <= 0.0f) {
                         if (rand() % 100 < 12) { 
                             nukePowerUp.spawn(zombie[j].pos[0], zombie[j].pos[1]);
                         }
                     }
+                } else {
+                    gl.score += 10;         // 10 points per zombie hit
+                    spawnFloatingText(zombie[j].pos[0], zombie[j].pos[1] + 30.0f, 10);
                 }
                 continue;
             }
