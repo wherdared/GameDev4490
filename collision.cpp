@@ -26,7 +26,10 @@ void checkCollisions() {
     
         // -- player and zombie collision
         if (!(pRight < zLeft || pLeft > zRight || pTop < zBottom || pBottom > zTop)) {
-    
+   
+            // take 1hp from player
+            player.takeDamage(5.0f);
+
             // use center distance to determine which axis to resolve on
             float dx = player.pos[0] - zombie[j].pos[0];
             float dy = player.pos[1] - zombie[j].pos[1];

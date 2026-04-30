@@ -594,30 +594,49 @@ void render()
     glClearColor(0.0, 0.0, 0.0, 1.0); 
     glClear(GL_COLOR_BUFFER_BIT);
     
-    Rect r;
+    //Rect r;
     renderBackground();
     
-    r.bot = gl.yres - 20;
-    r.left = 10;
+    //r.bot = gl.yres - 20;
+    //r.left = 10;
+    //r.center = 0;
+    //ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
+    //ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+    //ggprint(&r, 16, 16, 0x00ffffff, "Round: %i\n", roundManager.currentRound);
+  /*  
+    Rect r;
+
+    // position text slightly above the bar
+    r.left = x;
+    r.bot  = y + 25;
     r.center = 0;
-    ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
-    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
-    ggprint(&r, 16, 16, 0x00ffffff, "Round: %i\n", roundManager.currentRound);
-    
+
+    // "HP" label (white)
+    ggprint(&r, 16, 0, 0x00ffffff, "HP");
+    r.left += 1;
+    ggprint(&r, 16, 0, 0x00ffffff, "HP");
+    r.left -= 1;
+
+    // health numbers (green)
+    ggprint(&r, 16, 0, 0x0000ff00, "%i/%i", (int)health, (int)maxHealth);
+*/
+
     // render player
     if (spritesLoaded && currentPlayerSprite) {
         float angleDegrees = player.angle * 180.0f / (float)PI;
         currentPlayerSprite->render(player.pos[0], player.pos[1], angleDegrees);
     } else {
-        player.render();
+        printf("WARNING: Player sprite not loaded!\n");
     }
 
     // render zombies
     glDisable(GL_TEXTURE_2D);
-    //zombie[i].render();
-    ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+    player.renderHealthBar();
 
-    player.render();
+    //zombie[i].render();
+    //ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
+
+    //player.render();
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
     glDisable(GL_TEXTURE_2D);  // add this line

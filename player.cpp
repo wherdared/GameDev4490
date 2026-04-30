@@ -2,6 +2,7 @@
 #include <GL/glx.h>
 #include "player.h"
 #include "globals.h"
+#include "fonts.h"
 
 #ifndef PI
 #define PI 3.14159265358979323846
@@ -16,6 +17,10 @@ Player::Player()
     h = 40.0f;
     speed = 4.0f;
     angle = 0.0f;
+    maxHealth = 100.0f;
+    health = maxHealth;
+    damageCooldown = 0;
+    flashTimer = 0;
     color[0] = 0.2f;
     color[1] = 0.8f;
     color[2] = 0.3f;
@@ -63,6 +68,91 @@ void Player::update()
     float dy = (float)gl.mouse_y - pos[1];
     angle = atan2(dy, dx);
     
+    if (damageCooldown > 0)
+        damageCooldown--;
+
+    if (flashTimer > 0)
+        flashTimer--;
+}
+
+void Player::takeDamage(float amount)
+{
+    if (damageCooldown > 0)
+        return;
+
+    health -= amount;
+
+    if (health < 0.0f)
+        health = 0.0f;
+
+    damageCooldown = 30; // prevents damage every single frame
+    flashTimer = 10;     // player flashes red briefly
+}
+
+void Player::renderHealthBar()
+{
+    float barW = 200.0f;
+    float barH = 20.0f;
+    // change this to bottom left corner of screen
+    //float x = gl.xres - barW - 20.0f;
+    //float y = gl.yres - 40.0f;
+    float x   = 20.0f;
+    float y   = 20.0f;
+
+     Rect r;
+ 
+     // position for HP text
+     r.left = x;
+     r.bot  = y + 25;
+     r.center = 0;
+ 
+     // "HP" label (white)
+     ggprint(&r, 16, 0, 0x00ffffff, "H P");
+     r.left += 1;
+     ggprint(&r, 16, 0, 0x00ffffff, "H P");
+     r.left -= 1;
+ 
+     // position for HP fraction
+     r.left = x + 50;
+     r.bot  = y + 25;
+     r.center = 0;
+
+     // health numbers (green)
+     ggprint(&r, 16, 0, 0x00ffffff, "%i/%i", (int)health, (int)maxHealth);
+
+    float percent = health / maxHealth;
+
+    if (percent < 0.0f)
+        percent = 0.0f;
+    if (percent > 1.0f)
+        percent = 1.0f;
+
+    // Background bar
+    glColor3f(0.6f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+        glVertex2f(x, y);
+        glVertex2f(x + barW, y);
+        glVertex2f(x + barW, y + barH);
+        glVertex2f(x, y + barH);
+    glEnd();
+
+    // Health amount RGB
+    glColor3f(0.0f, 0.85f, 0.0f);
+    glBegin(GL_QUADS);
+        glVertex2f(x, y);
+        glVertex2f(x + barW * percent, y);
+        glVertex2f(x + barW * percent, y + barH);
+        glVertex2f(x, y + barH);
+    glEnd();
+
+    // Border
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(x, y);
+        glVertex2f(x + barW, y);
+        glVertex2f(x + barW, y + barH);
+        glVertex2f(x, y + barH);
+    glEnd();
 }
 
 void Player::render()
@@ -76,7 +166,11 @@ void Player::render()
     glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
 
     // Draw player body
-    glColor3fv(color);
+    if (flashTimer > 0)
+        glColor3f(1.0f, 0.0f, 0.0f);
+    else
+        glColor3fv(color);
+    
     glBegin(GL_QUADS);
         glVertex2f(-w / 2.0f, -h / 2.0f);
         glVertex2f(-w / 2.0f,  h / 2.0f);
