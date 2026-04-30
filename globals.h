@@ -23,7 +23,9 @@ public:
     int mouse_y_down;
     int mouse_cursor_on;
     int nframes, fps;
-    
+    int score;          // score for amount of zombies killed/damaged
+    double gameTimer;
+
     GameState state;  
     bool done;      
 
@@ -37,6 +39,9 @@ public:
         mouse_cursor_on = 1;
         nframes = 1;
         fps = 0;
+        score = 0;
+        gameTimer = 0.0;
+
         state = STATE_TITLE; 
         done = false;
     }

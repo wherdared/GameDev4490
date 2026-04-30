@@ -46,6 +46,10 @@ void Sprite::render(float x, float y, float angle)
     glTranslatef(x, y, 0.0f);
     glRotatef(angle, 0.0f, 0.0f, 1.0f);
 
+    // added these 2 lines to remove the black background on the sprite
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
     glEnable(GL_TEXTURE_2D);
     glBindTexture(GL_TEXTURE_2D, tex[currentFrame]);
 
@@ -60,6 +64,7 @@ void Sprite::render(float x, float y, float angle)
     glEnd();
 
     glDisable(GL_TEXTURE_2D);
+    glDisable(GL_BLEND);        // after drawing the sprite disable this
 
     glPopMatrix();
 }

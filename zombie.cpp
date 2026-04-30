@@ -28,8 +28,10 @@ Zombie::Zombie() {
     color[2] = 0.0f;
     health = 100;         // health for each zombie
     alive = false;
+    wasHit = false;         // dont show health bar until hit
     spawnTimer = {0, 0};
     currentSprite = NULL;
+    hitFlashTimer = 0.0f;
 
     frameTimer = 0.0f;
     currentFrame = 0;
@@ -38,6 +40,8 @@ Zombie::Zombie() {
 void Zombie::init() {
     health = 100.0f;        // remove this line when i am spawning in multiple zombies
     alive = false;
+    wasHit = false;
+    hitFlashTimer = 0.0f;
     spawnTimer = {0, 0};
 
     currentSprite = &zombieIdle;
@@ -79,6 +83,11 @@ void Zombie::update() {
         return;
     }
 
+    // update flash timer
+    if (hitFlashTimer > 0.0f)
+        hitFlashTimer -= 1.0f / 60.0f;
+    if (hitFlashTimer < 0.0f)
+        hitFlashTimer = 0.0f;
 
     // zombies should just move to to position of where the player is currently at
     float dx = player.pos[0] - pos[0];
@@ -135,12 +144,16 @@ void Zombie::render() {
         glEnable(GL_BLEND);
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         //---------------------------------------------------
+        if (hitFlashTimer > 0.0f)
+            glColor4f(1.0f, 0.0f, 0.0f, 1.0f); // red flash
+        else
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f); // sprite back to normal
         glEnable(GL_TEXTURE_2D);
         glBindTexture(GL_TEXTURE_2D, currentSprite->tex[currentFrame]);
 
         float sw = currentSprite->frameWidth / 2.0f;
         float sh = currentSprite->frameHeight / 2.0f;
-
+        
         glBegin(GL_QUADS);
             glTexCoord2f(0,1); glVertex2f(-sw,-sh);
             glTexCoord2f(0,0); glVertex2f(-sw, sh);
@@ -151,12 +164,40 @@ void Zombie::render() {
         glDisable(GL_BLEND);                // added this line to get rid of black background
         glBindTexture(GL_TEXTURE_2D, 0);
         glPopMatrix();
+
+        // draw health bar only if zombie has been hit
+        if (wasHit) {
+            float barWidth = 40.0f;
+            float barHeight = 5.0f;
+            float barX = pos[0] - barWidth / 2.0f;
+            float barY = pos[1] + h / 2.0f + 8.0f;
+
+            // black background bar
+            glColor3f(0.0f, 0.0f, 0.0f);
+            glBegin(GL_QUADS);
+                glVertex2f(barX,            barY);
+                glVertex2f(barX + barWidth, barY);
+                glVertex2f(barX + barWidth, barY + barHeight);
+                glVertex2f(barX, barY + barHeight);
+            glEnd();
+
+            // green health bar
+            float healthPercent = health / 100.0f;
+            glColor3f(0.0f, 1.0f, 0.0f);
+            glBegin(GL_QUADS);
+                glVertex2f(barX,                            barY);
+                glVertex2f(barX + barWidth * healthPercent, barY);
+                glVertex2f(barX + barWidth * healthPercent, barY + barHeight);
+                glVertex2f(barX,                            barY + barHeight);
+            glEnd();
+            glColor3f(1.0f, 1.0f, 1.0f);        // reset colors
+        }
     } else {
         glColor3fv(color);
         glPushMatrix();
         glTranslatef(pos[0], pos[1], pos[2]);
         
-        // Draw Zombie
+        // Draw Zombie without sprite
         glBegin(GL_LINE_LOOP);    // change this to an outline to kinda make it like a hitbox
             glVertex2f(-w / 2.0f, -h / 2.0f);
             glVertex2f(-w / 2.0f,  h / 2.0f);
