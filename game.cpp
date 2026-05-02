@@ -634,7 +634,7 @@ void render()
     glClear(GL_COLOR_BUFFER_BIT);
     
     Rect r;
-    //renderBackground();
+    renderBackground();
     
     r.bot = gl.yres - 40;
     r.left = 10;
@@ -677,11 +677,7 @@ void render()
         rf.bot = (int)floatingTexts[i].y;
         rf.left = (int)floatingTexts[i].x;
         rf.center = 0;
-        if (floatingTexts[i].points == 110)
-            ggprint(&rf, 14, 0, 0x00ff0000, "+%i", floatingTexts[i].points);
-        else {
-            ggprint(&rf, 14, 0, 0x00ffff00, "+%i", floatingTexts[i].points);
-        }
+        ggprint(&rf, 14, 0, 0x00ffff00, "+%i", floatingTexts[i].points);
     }
 
     // bullets and crosshair 

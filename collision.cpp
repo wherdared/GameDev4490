@@ -144,6 +144,7 @@ void checkCollisions() {
                         zombie[k].alive = false;
                         roundManager.zombiesKilled++;
                         gl.score += 100;
+                        spawnFloatingText(zombie[k].pos[0], zombie[k].pos[1] + 30.0f, 100);
                     }
                 }
             }
