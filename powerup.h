@@ -21,5 +21,6 @@ class PowerUp {
 };
 
 extern PowerUp nukePowerUp;
+extern PowerUp freezePowerUp;
 
 #endif

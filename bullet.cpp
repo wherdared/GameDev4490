@@ -37,8 +37,17 @@ void BulletManager::spawn(const Player &player)
     float xdir = cos(player.angle);
     float ydir = sin(player.angle);
 
-    b->pos[0] = player.pos[0] + xdir * 25.0f;
-    b->pos[1] = player.pos[1] + ydir * 25.0f;
+    // Perpendicular direction
+    // This lets us move the bullet spawn slightly above/below the center
+    float perpX = -ydir;
+    float perpY =  xdir;
+
+    // Lines up bullets with the gun barrel
+    float forwardOffset = 45.0f;
+    float sideOffset = -18.0f;
+
+    b->pos[0] = player.pos[0] + xdir * forwardOffset + perpX * sideOffset;
+    b->pos[1] = player.pos[1] + ydir * forwardOffset + perpY * sideOffset;
     b->pos[2] = 0.0f;
 
     float bulletSpeed = 8.0f;

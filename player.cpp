@@ -3,6 +3,13 @@
 #include "player.h"
 #include "globals.h"
 #include "fonts.h"
+#include "sprite.h"
+
+extern Sprite playerIdle;
+extern Sprite playerMove;
+extern Sprite playerShoot;
+extern Sprite *currentPlayerSprite;
+extern bool spritesLoaded;
 
 #ifndef PI
 #define PI 3.14159265358979323846
@@ -19,6 +26,7 @@ Player::Player()
     angle = 0.0f;
     maxHealth = 100.0f;
     health = maxHealth;
+    wasDamaged = false;
     damageCooldown = 0;
     flashTimer = 0;
     color[0] = 0.2f;
@@ -91,34 +99,31 @@ void Player::takeDamage(float amount)
 
 void Player::renderHealthBar()
 {
+
     float barW = 200.0f;
     float barH = 20.0f;
-    // change this to bottom left corner of screen
-    //float x = gl.xres - barW - 20.0f;
-    //float y = gl.yres - 40.0f;
     float x   = 20.0f;
     float y   = 20.0f;
 
-     Rect r;
+    Rect r;
  
-     // position for HP text
-     r.left = x;
-     r.bot  = y + 25;
-     r.center = 0;
+    // position for HP text
+    r.left = x;
+    r.bot  = y + 25;
+    r.center = 0;
  
-     // "HP" label (white)
-     ggprint(&r, 16, 0, 0x00ffffff, "H P");
-     r.left += 1;
-     ggprint(&r, 16, 0, 0x00ffffff, "H P");
-     r.left -= 1;
+    ggprint(&r, 16, 0, 0x00ffffff, "H P");
+    r.left += 1;
+    ggprint(&r, 16, 0, 0x00ffffff, "H P");
+    r.left -= 1;
  
-     // position for HP fraction
-     r.left = x + 50;
-     r.bot  = y + 25;
-     r.center = 0;
+    // position for HP fraction
+    r.left = x + 50;
+    r.bot  = y + 25;
+    r.center = 0;
 
-     // health numbers (green)
-     ggprint(&r, 16, 0, 0x00ffffff, "%i/%i", (int)health, (int)maxHealth);
+    // health numbers (green)
+    ggprint(&r, 16, 0, 0x00ffffff, "%i/%i", (int)health, (int)maxHealth);
 
     float percent = health / maxHealth;
 
@@ -157,63 +162,43 @@ void Player::renderHealthBar()
 
 void Player::render()
 {
-    glPushMatrix();
-    glTranslatef(pos[0], pos[1], pos[2]);
+    if (spritesLoaded && currentPlayerSprite) {
+        float angleDegrees = angle * 180.0f / (float)PI;
 
-    // Rotate player so its front faces the mouse
-    // Our "front" is the +x direction, so convert radians to degrees
-    float angleDegrees = angle * 180.0f / (float)PI;
-    glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
+        glPushMatrix();
+        glTranslatef(pos[0], pos[1], 0.0f);
+        glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
 
-    // Draw player body
-    if (flashTimer > 0)
-        glColor3f(1.0f, 0.0f, 0.0f);
-    else
-        glColor3fv(color);
-    
-    glBegin(GL_QUADS);
-        glVertex2f(-w / 2.0f, -h / 2.0f);
-        glVertex2f(-w / 2.0f,  h / 2.0f);
-        glVertex2f( w / 2.0f,  h / 2.0f);
-        glVertex2f( w / 2.0f, -h / 2.0f);
-    glEnd();
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+        glEnable(GL_TEXTURE_2D);
 
-    // Draw center point
-    glPointSize(5.0f);
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_POINTS);
-        glVertex2f(0.0f, 0.0f);
-    glEnd();
-    glPointSize(1.0f);
+        if (flashTimer > 0)
+            glColor4f(1.0f, 0.0f, 0.0f, 1.0f);  // red flash
+        else
+            glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // normal sprite
 
-    // Draw small barrel/front marker
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_QUADS);
-        glVertex2f(w / 2.0f - 2.0f, -4.0f);
-        glVertex2f(w / 2.0f - 2.0f,  4.0f);
-        glVertex2f(w / 2.0f + 12.0f, 4.0f);
-        glVertex2f(w / 2.0f + 12.0f, -4.0f);
-    glEnd();
+        glBindTexture(GL_TEXTURE_2D,
+            currentPlayerSprite->tex[currentPlayerSprite->currentFrame]);
 
-    // Draw aim line
-    float aimLength = 35.0f;
-    glLineWidth(3.0f);
-    glColor3f(1.0f, 1.0f, 0.0f);
-    glBegin(GL_LINES);
-        glVertex2f(0.0f, 0.0f);
-        glVertex2f(aimLength, 0.0f);
-    glEnd();
-    glLineWidth(1.0f);
+        float sw = currentPlayerSprite->frameWidth / 2.0f;
+        float sh = currentPlayerSprite->frameHeight / 2.0f;
 
-    glPopMatrix();
+        glBegin(GL_QUADS);
+            glTexCoord2f(0, 1); glVertex2f(-sw, -sh);
+            glTexCoord2f(0, 0); glVertex2f(-sw,  sh);
+            glTexCoord2f(1, 0); glVertex2f( sw,  sh);
+            glTexCoord2f(1, 1); glVertex2f( sw, -sh);
+        glEnd();
 
-    // Draw mouse marker
-    glColor3f(1.0f, 1.0f, 1.0f);
-    glBegin(GL_LINES);
-        glVertex2f(gl.mouse_x - 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x + 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x, gl.mouse_y - 8);
-        glVertex2f(gl.mouse_x, gl.mouse_y + 8);
-    glEnd();
+        glBindTexture(GL_TEXTURE_2D, 0);
+        glDisable(GL_TEXTURE_2D);
+        glDisable(GL_BLEND);
+
+        glColor4f(1.0f, 1.0f, 1.0f, 1.0f); // reset color
+
+        glPopMatrix();
+    }
 }
+
 

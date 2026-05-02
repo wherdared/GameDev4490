@@ -221,8 +221,8 @@ void renderTitle() {
     float pulse = 1.0f + 0.05f * std::sin(totalTime * 3.0f);
     float titleScale = 3.0f * pulse;
 
-    drawText("Zombie", gl.xres/2.0f - getTextWidth("Zombie", titleScale)/2.0f, 100.0f, 1.0f, 0.0f, 0.0f, titleScale);
-    drawText("Game", gl.xres/2.0f - getTextWidth("Game", titleScale)/2.0f, 100.0f + 30.0f*titleScale, 1.0f, 0.0f, 0.0f, titleScale);
+    drawText("Dead", gl.xres/2.0f - getTextWidth("Dead", titleScale)/2.0f, 100.0f, 1.0f, 0.0f, 0.0f, titleScale);
+    drawText("Reckoning", gl.xres/2.0f - getTextWidth("Reckoning", titleScale)/2.0f, 100.0f + 30.0f*titleScale, 1.0f, 0.0f, 0.0f, titleScale);
     
     float tagScale = 0.8f;
     drawText("- LAST STAND -", gl.xres/2.0f - getTextWidth("- LAST STAND -", tagScale)/2.0f, 260.0f, 74/255.f, 74/255.f, 74/255.f, tagScale);

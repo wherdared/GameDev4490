@@ -2,6 +2,7 @@
 #define PLAYER_H
 
 #include "globals.h"
+#include "sprite.h"
 
 class Player {
 public:
@@ -13,9 +14,12 @@ public:
     float maxHealth;
     float color[3];
 
+    bool wasDamaged;
     int damageCooldown;
     int flashTimer;
-
+    
+    Sprite *currentSprite;
+    
     Player();
 
     void update();

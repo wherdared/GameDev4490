@@ -311,7 +311,7 @@ public:
         set_title();
         glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
         glXMakeCurrent(dpy, win, glc);
-        show_mouse_cursor(gl.mouse_cursor_on);
+        //show_mouse_cursor(gl.mouse_cursor_on);
     }
 
     ~X11_wrapper() {
@@ -518,18 +518,50 @@ void physics()
         updateTitle((float)physicsRate);
         return;
     }
+
+    // for freeze power up
+    if (gl.freezeTimer > 0.0f) {
+        gl.freezeTimer -= physicsRate;
+        if (gl.freezeTimer < 0.0f)
+            gl.freezeTimer = 0.0f;
+    }
+
+    // activate game over screen
+    if (gl.state == STATE_GAMEOVER) {
+        // renderGameOver();
+        return;
+    }
+
+    if (player.health <= 0.0f) {
+        player.health = 0.0f;
+        gl.state = STATE_GAMEOVER;
+        return;
+    }
     
     gl.gameTimer += physicsRate;
     player.update();
 
     // spawn a new zombie ever 1 sec up to MAX_ZOMBIES
     roundManager.update();
-    for (int i=0; i<nzombies; i++)
-        zombie[i].update();
+
+    // leave zombies alone if no freeze powerup
+    if (gl.freezeTimer <= 0.0f) {
+        for (int i=0; i<nzombies; i++)
+            zombie[i].update();
+    }
     
     checkCollisions();
+    
+   // check for player's health to determine game over screen 
+    if (player.health <= 0.0f) {
+        player.health = 0.0f;
+        gl.state = STATE_GAMEOVER;
+        return;
+    }
+
     bulletManager.update(player);
     nukePowerUp.update();
+    freezePowerUp.update();
 
     if (bulletTimerChanged(bulletManager.bulletTimer, lastBulletStamp)) {
         lastBulletStamp = bulletManager.bulletTimer;
@@ -595,20 +627,22 @@ void render()
         renderTitle();
         return;
     }
-
+        
     glClearColor(0.0, 0.0, 0.0, 1.0); 
     glClear(GL_COLOR_BUFFER_BIT);
     
-    Rect r;
+    Rect r, r2;
     renderBackground();
     
     r.bot = gl.yres - 40;
     r.left = 10;
     r.center = 0;
-    ggprint(&r, 16, 16, 0x00ffff00, "CMPS 4490 - Player/Zombie Test\n");
-    ggprint(&r, 16, 16, 0x00ffffff, "\n");
-    ggprint(&r, 16, 16, 0x00ffffff, "Score: %i\n", gl.score);  // player score
-    ggprint(&r, 16, 16, 0x00ffffff, "Round: %i\n", roundManager.currentRound);
+    
+    r2.bot = gl.yres - 40;
+    r2.left = gl.xres / 2;
+    r2.center = 1;
+
+    ggprint(&r, 32, 32, 0x00ffffff, "Score: %i\n", gl.score);  // player score
     ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
 
     // live timer
@@ -616,27 +650,53 @@ void render()
     int hours = totalSeconds / 3600;
     int minutes = (totalSeconds % 3600) / 60;
     int seconds = totalSeconds % 3600;
-    ggprint(&r, 16, 16, 0x00ffffff, "Time: %02i:%02i:%02i\n", hours, minutes, seconds);
+
+        
+    // background for round/timer
+    float boxWidth  = 300.0f;
+    float boxHeight = 90.0f;
+
+    // center it around r2
+    float boxX = r2.left - boxWidth / 2.1f;
+    float boxY = r2.bot; // -20.0f
+
+    // semi-transparent black box
+    glEnable(GL_BLEND);
+    glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+    glColor4f(0.0f, 0.0f, 0.0f, 0.6f);
+    glBegin(GL_QUADS);
+        glVertex2f(boxX, boxY);
+        glVertex2f(boxX + boxWidth, boxY);
+        glVertex2f(boxX + boxWidth, boxY + boxHeight);
+        glVertex2f(boxX, boxY + boxHeight);
+    glEnd();
+
+    // white border
+    glColor3f(1.0f, 1.0f, 1.0f);
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(boxX, boxY);
+        glVertex2f(boxX + boxWidth, boxY);
+        glVertex2f(boxX + boxWidth, boxY + boxHeight);
+        glVertex2f(boxX, boxY + boxHeight);
+    glEnd();
+
+    ggprint(&r2, 32, 32, 0xffffffff, "Round: %i\n - %02i:%02i:%02i\n", 
+            roundManager.currentRound, hours, minutes, seconds);
 
     // render player
-    if (spritesLoaded && currentPlayerSprite) {
-        float angleDegrees = player.angle * 180.0f / (float)PI;
-        currentPlayerSprite->render(player.pos[0], player.pos[1], angleDegrees);
-    } else {
-        printf("WARNING: Player sprite not loaded!\n");
+    if (gl.state != STATE_GAMEOVER) {
+        player.render();
     }
 
     // render zombies
-    glDisable(GL_TEXTURE_2D);
-    player.renderHealthBar();
-
-    //zombie[i].render();
-    //ggprint(&r, 16, 16, 0x00ffffff, "FPS: %i\n", gl.fps);
-
-    //player.render();
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
+    
+    // render power ups
     nukePowerUp.render();
+    freezePowerUp.render();
+
     glDisable(GL_TEXTURE_2D);  
     glBindTexture(GL_TEXTURE_2D, 0);
 
@@ -644,4 +704,60 @@ void render()
     bulletManager.render();
     renderMouseCrosshair();
     glEnable(GL_TEXTURE_2D);
+    
+    // render health bar
+    glDisable(GL_TEXTURE_2D);
+    player.renderHealthBar();
+    
+    if (gl.state == STATE_GAMEOVER) {
+    glDisable(GL_TEXTURE_2D);
+
+    float boxW = gl.xres * 0.78f;
+    float boxH = 230.0f;
+    float boxX = (gl.xres - boxW) / 2.0f;
+    float boxY = (gl.yres - boxH) / 2.0f + 20.0f;
+
+    // Black box
+    glColor3f(0.0f, 0.0f, 0.0f);
+    glBegin(GL_QUADS);
+        glVertex2f(boxX,        boxY);
+        glVertex2f(boxX + boxW, boxY);
+        glVertex2f(boxX + boxW, boxY + boxH);
+        glVertex2f(boxX,        boxY + boxH);
+    glEnd();
+
+    // Red border
+    glLineWidth(5.0f);
+    glColor3f(1.0f, 0.0f, 0.0f);
+    glBegin(GL_LINE_LOOP);
+        glVertex2f(boxX,        boxY);
+        glVertex2f(boxX + boxW, boxY);
+        glVertex2f(boxX + boxW, boxY + boxH);
+        glVertex2f(boxX,        boxY + boxH);
+    glEnd();
+    glLineWidth(1.0f);
+
+    Rect r;
+    r.center = 1;
+    r.left = gl.xres / 2;
+    r.bot = boxY + 145.0f;
+
+    Rect shadow = r;
+    shadow.left += 5;
+    shadow.bot -= 5;
+    ggprint(&shadow, 90, 0, 0x00000000, "GAME OVER");
+
+    ggprint(&r, 90, 0, 0x00ff0000, "GAME OVER");
+    
+    r.bot -= 40;
+    ggprint(&r, 30, 0, 0x00ffffff, "Final Score: %i", gl.score);
+
+    r.bot -= 60;
+    ggprint(&r, 30, 0, 0x00ffffff, "Press R to restart");
+
+    glEnable(GL_TEXTURE_2D);
+
+    return;
+}
+    
 }
