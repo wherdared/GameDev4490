@@ -106,7 +106,12 @@ void Player::renderHealthBar()
     float y   = 20.0f;
 
     Rect r;
- 
+
+    glEnable(GL_TEXTURE_2D);   
+    glDisable(GL_BLEND);      
+    glColor3f(1.0f, 1.0f, 1.0f); 
+
+
     // position for HP text
     r.left = x;
     r.bot  = y + 25;

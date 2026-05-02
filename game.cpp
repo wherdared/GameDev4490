@@ -668,6 +668,30 @@ void render()
     Rect r, r2;
     renderBackground();
     
+    // render player
+    if (gl.state != STATE_GAMEOVER) {
+        player.render();
+    }
+
+    // render zombies
+    for (int i=0; i<nzombies; i++)
+        zombie[i].render();
+    
+    // render power ups
+    nukePowerUp.render();
+    freezePowerUp.render();
+
+    // bullets and crosshair 
+    bulletManager.render();
+    renderMouseCrosshair();
+    glEnable(GL_TEXTURE_2D);
+    
+    // reset state before text
+    glDisable(GL_BLEND);
+    glEnable(GL_TEXTURE_2D);
+    glBindTexture(GL_TEXTURE_2D, 0);
+    glColor3f(1.0f, 1.0f, 1.0f);
+
     r.bot = gl.yres - 40;
     r.left = 10;
     r.center = 0;
@@ -683,7 +707,7 @@ void render()
     int totalSeconds = (int)gl.gameTimer;
     int hours = totalSeconds / 3600;
     int minutes = (totalSeconds % 3600) / 60;
-    int seconds = totalSeconds % 3600;
+    int seconds = totalSeconds % 60;
 
         
     // background for round/timer
@@ -697,7 +721,6 @@ void render()
     // semi-transparent black box
     glEnable(GL_BLEND);
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
-
     glColor4f(0.0f, 0.0f, 0.0f, 0.6f);
     glBegin(GL_QUADS);
         glVertex2f(boxX, boxY);
@@ -718,22 +741,6 @@ void render()
     ggprint(&r2, 32, 32, 0xffffffff, "Round: %i\n - %02i:%02i:%02i\n", 
             roundManager.currentRound, hours, minutes, seconds);
 
-    // render player
-    if (gl.state != STATE_GAMEOVER) {
-        player.render();
-    }
-
-    // render zombies
-    for (int i=0; i<nzombies; i++)
-        zombie[i].render();
-    
-    // render power ups
-    nukePowerUp.render();
-    freezePowerUp.render();
-
-    glDisable(GL_TEXTURE_2D);  
-    glBindTexture(GL_TEXTURE_2D, 0);
-
     // floating text
     glEnable(GL_TEXTURE_2D);
     glColor3f(1.0f, 1.0f, 1.0f);
@@ -743,67 +750,63 @@ void render()
         rf.bot = (int)floatingTexts[i].y;
         rf.left = (int)floatingTexts[i].x;
         rf.center = 0;
-        ggprint(&rf, 14, 0, 0x00ffff00, "+%i", floatingTexts[i].points);
+        if (floatingTexts[i].points >= 100)
+            ggprint(&rf, 14, 0, 0x0000ff00, "+%i", floatingTexts[i].points);
+        else    
+            ggprint(&rf, 14, 0, 0x00ffffff, "+%i", floatingTexts[i].points);
     }
-
-    // bullets and crosshair 
-    bulletManager.render();
-    renderMouseCrosshair();
-    glEnable(GL_TEXTURE_2D);
     
     // render health bar
     glDisable(GL_TEXTURE_2D);
     player.renderHealthBar();
     
     if (gl.state == STATE_GAMEOVER) {
-    glDisable(GL_TEXTURE_2D);
+        glDisable(GL_TEXTURE_2D);
 
-    float boxW = gl.xres * 0.78f;
-    float boxH = 230.0f;
-    float boxX = (gl.xres - boxW) / 2.0f;
-    float boxY = (gl.yres - boxH) / 2.0f + 20.0f;
+        float boxW = gl.xres * 0.78f;
+        float boxH = 230.0f;
+        float boxX = (gl.xres - boxW) / 2.0f;
+        float boxY = (gl.yres - boxH) / 2.0f + 20.0f;
 
-    // Black box
-    glColor3f(0.0f, 0.0f, 0.0f);
-    glBegin(GL_QUADS);
-        glVertex2f(boxX,        boxY);
-        glVertex2f(boxX + boxW, boxY);
-        glVertex2f(boxX + boxW, boxY + boxH);
-        glVertex2f(boxX,        boxY + boxH);
-    glEnd();
+        // Black box
+        glColor3f(0.0f, 0.0f, 0.0f);
+        glBegin(GL_QUADS);
+            glVertex2f(boxX,        boxY);
+            glVertex2f(boxX + boxW, boxY);
+            glVertex2f(boxX + boxW, boxY + boxH);
+            glVertex2f(boxX,        boxY + boxH);
+        glEnd();
 
-    // Red border
-    glLineWidth(5.0f);
-    glColor3f(1.0f, 0.0f, 0.0f);
-    glBegin(GL_LINE_LOOP);
-        glVertex2f(boxX,        boxY);
-        glVertex2f(boxX + boxW, boxY);
-        glVertex2f(boxX + boxW, boxY + boxH);
-        glVertex2f(boxX,        boxY + boxH);
-    glEnd();
-    glLineWidth(1.0f);
+        // Red border
+        glLineWidth(5.0f);
+        glColor3f(1.0f, 0.0f, 0.0f);
+        glBegin(GL_LINE_LOOP);
+            glVertex2f(boxX,        boxY);
+            glVertex2f(boxX + boxW, boxY);
+            glVertex2f(boxX + boxW, boxY + boxH);
+            glVertex2f(boxX,        boxY + boxH);
+        glEnd();
+        glLineWidth(1.0f);
 
-    Rect r;
-    r.center = 1;
-    r.left = gl.xres / 2;
-    r.bot = boxY + 145.0f;
+        Rect r;
+        r.center = 1;
+        r.left = gl.xres / 2;
+        r.bot = boxY + 145.0f;
 
-    Rect shadow = r;
-    shadow.left += 5;
-    shadow.bot -= 5;
-    ggprint(&shadow, 90, 0, 0x00000000, "GAME OVER");
+        Rect shadow = r;
+        shadow.left += 5;
+        shadow.bot -= 5;
+        ggprint(&shadow, 90, 0, 0x00000000, "GAME OVER");
 
-    ggprint(&r, 90, 0, 0x00ff0000, "GAME OVER");
+        ggprint(&r, 90, 0, 0x00ff0000, "GAME OVER");
     
-    r.bot -= 40;
-    ggprint(&r, 30, 0, 0x00ffffff, "Final Score: %i", gl.score);
+        r.bot -= 40;
+        ggprint(&r, 30, 0, 0x00ffffff, "Final Score: %i", gl.score);
 
-    r.bot -= 60;
-    ggprint(&r, 30, 0, 0x00ffffff, "Press R to restart");
+        r.bot -= 60;
+        ggprint(&r, 30, 0, 0x00ffffff, "Press R to restart");
 
-    glEnable(GL_TEXTURE_2D);
-
-    return;
-}
-    
+        glEnable(GL_TEXTURE_2D);
+        return;
+    }
 }
