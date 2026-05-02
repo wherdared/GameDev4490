@@ -180,7 +180,7 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
 
 void loadBackground()
 {
-    if (!loadTexturePNG_UsingImageMagick("background.png", backgroundTex)) {
+    if (!loadTexturePNG_UsingImageMagick("zombieMap.png", backgroundTex)) {
         std::cout << "Failed to load background.png" << std::endl;
     } else {
         std::cout << "Loaded background.png" << std::endl;
