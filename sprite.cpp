@@ -56,6 +56,7 @@ void Sprite::render(float x, float y, float angle)
     float w = frameWidth / 2.0f;
     float h = frameHeight / 2.0f;
 
+    glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
     glBegin(GL_QUADS);
         glTexCoord2f(0,1); glVertex2f(-w,-h);
         glTexCoord2f(0,0); glVertex2f(-w, h);

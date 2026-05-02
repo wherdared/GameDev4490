@@ -29,6 +29,15 @@ void checkCollisions() {
     
         // -- player and zombie collision
         if (!(pRight < zLeft || pLeft > zRight || pTop < zBottom || pBottom > zTop)) {
+   
+            // take 1hp from player
+            player.takeDamage(5.0f);
+
+            // flash player red
+            //player.wasDamaged = true;     // show health bar
+            //player.flashTimer = 0.15f; // flash for 0.15 seconds
+
+
             // use center distance to determine which axis to resolve on
             float dx = player.pos[0] - zombie[j].pos[0];
             float dy = player.pos[1] - zombie[j].pos[1];
@@ -113,6 +122,12 @@ void checkCollisions() {
                         if (rand() % 100 < 12) { 
                             nukePowerUp.spawn(zombie[j].pos[0], zombie[j].pos[1]);
                         }
+                    } 
+                    
+                    if (!freezePowerUp.active && freezePowerUp.explosionTimer <= 0.0f) {
+                        if (rand() % 100 < 12) { 
+                            freezePowerUp.spawn(zombie[j].pos[0], zombie[j].pos[1]);
+                        }
                     }
                 } else {
                     gl.score += 10;         // 10 points per zombie hit
@@ -124,6 +139,7 @@ void checkCollisions() {
         }
     }
 
+    // nuke power up
     if (nukePowerUp.active) {
         float dx = player.pos[0] - nukePowerUp.pos[0];
         float dy = player.pos[1] - nukePowerUp.pos[1];
@@ -150,4 +166,28 @@ void checkCollisions() {
             }
         }
     }
+    
+    // freeze power up
+    if (freezePowerUp.active) {
+        float dx = player.pos[0] - freezePowerUp.pos[0];
+        float dy = player.pos[1] - freezePowerUp.pos[1];
+        float dist = sqrt(dx*dx + dy*dy);
+        
+        if (dist < (player.w / 2.0f + freezePowerUp.w / 2.0f)) {
+            freezePowerUp.active = false;
+            freezePowerUp.explosionTimer = freezePowerUp.maxExplosionTime; 
+            gl.freezeTimer = 5.0f; // freeze zombies for 5 seconds
+        }
+    }
+
 }
+
+
+
+
+
+
+
+
+
+
