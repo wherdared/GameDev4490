@@ -136,6 +136,10 @@ void Zombie::render() {
     if (!alive) return;
 
     if (zombieSpritesLoaded && currentSprite) {
+        // tint zombies blue when freeze power up
+        //if (freezeTimer > 0.0f)
+          //   glColor3f(0.5f, 0.8f, 1.0f);
+
         float angleDegrees = angle * 180.0f / (float)PI;
         glPushMatrix();
         glTranslatef(pos[0], pos[1], 0.0f);

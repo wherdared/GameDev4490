@@ -11,7 +11,8 @@ typedef float Vec[3];
 // 1. ADDED: Game states
 enum GameState {
     STATE_TITLE,
-    STATE_GAME
+    STATE_GAME,
+    STATE_GAMEOVER
 };
 
 class Global {
@@ -25,6 +26,7 @@ public:
     int nframes, fps;
     int score;          // score for amount of zombies killed/damaged
     double gameTimer;
+    double freezeTimer;
 
     GameState state;  
     bool done;      
@@ -41,6 +43,7 @@ public:
         fps = 0;
         score = 0;
         gameTimer = 0.0;
+        freezeTimer = 0.0;
 
         state = STATE_TITLE; 
         done = false;
