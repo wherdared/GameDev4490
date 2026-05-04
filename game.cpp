@@ -70,9 +70,9 @@ bool fileExists(const std::string &path)
 bool keysMoving()
 {
     return gl.keys[XK_w] || gl.keys[XK_W] ||
-           gl.keys[XK_a] || gl.keys[XK_A] ||
-           gl.keys[XK_s] || gl.keys[XK_S] ||
-           gl.keys[XK_d] || gl.keys[XK_D];
+        gl.keys[XK_a] || gl.keys[XK_A] ||
+        gl.keys[XK_s] || gl.keys[XK_S] ||
+        gl.keys[XK_d] || gl.keys[XK_D];
 }
 
 bool bulletTimerChanged(const struct timespec &a, const struct timespec &b)
@@ -136,7 +136,7 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
     int imgH = 0;
 
     std::snprintf(cmd, sizeof(cmd),
-        "identify -format \"%%w %%h\" \"%s\" 2>/dev/null", finalPath.c_str());
+            "identify -format \"%%w %%h\" \"%s\" 2>/dev/null", finalPath.c_str());
     FILE *fpInfo = popen(cmd, "r");
     if (!fpInfo)
         return 0;
@@ -153,7 +153,7 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
     std::vector<unsigned char> pixels(imgW * imgH * 4);
 
     std::snprintf(cmd, sizeof(cmd),
-        "convert \"%s\" -alpha on rgba:- 2>/dev/null", finalPath.c_str());
+            "convert \"%s\" -alpha on rgba:- 2>/dev/null", finalPath.c_str());
     FILE *fpData = popen(cmd, "r");
     if (!fpData)
         return 0;
@@ -173,7 +173,7 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgW, imgH, 0,
-                 GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
+            GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
 
     return 1;
 }
@@ -231,8 +231,8 @@ void loadZombieSprites()
     zombieIdle.frameHeight  = zombieMove.frameHeight  = zombieAttack.frameHeight = 80;
 
     zombieSpritesLoaded = (zombieIdle.tex[0] != 0) &&
-                          (zombieMove.tex[0] != 0) &&
-                          (zombieAttack.tex[0] != 0);
+        (zombieMove.tex[0] != 0) &&
+        (zombieAttack.tex[0] != 0);
 
     if (zombieSpritesLoaded)
         printf("zombie sprites loaded successfully\n");
@@ -278,134 +278,134 @@ void spawnFloatingText(float x, float y, int points) {
 
 // X11 wrapper
 class X11_wrapper {
-private:
-    Display *dpy;
-    Window win;
-    GLXContext glc;
-public:
-    X11_wrapper() { }
+    private:
+        Display *dpy;
+        Window win;
+        GLXContext glc;
+    public:
+        X11_wrapper() { }
 
-    X11_wrapper(int w, int h) {
-        GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
-        XSetWindowAttributes swa;
-        setup_screen_res(gl.xres, gl.yres);
-        dpy = XOpenDisplay(NULL);
-        if (dpy == NULL) {
-            std::cout << "\n\tcannot connect to X server" << std::endl;
-            exit(EXIT_FAILURE);
+        X11_wrapper(int w, int h) {
+            GLint att[] = { GLX_RGBA, GLX_DEPTH_SIZE, 24, GLX_DOUBLEBUFFER, None };
+            XSetWindowAttributes swa;
+            setup_screen_res(gl.xres, gl.yres);
+            dpy = XOpenDisplay(NULL);
+            if (dpy == NULL) {
+                std::cout << "\n\tcannot connect to X server" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            Window root = DefaultRootWindow(dpy);
+            XWindowAttributes getWinAttr;
+            XGetWindowAttributes(dpy, root, &getWinAttr);
+
+            int fullscreen = 0;
+            gl.xres = w;
+            gl.yres = h;
+
+            if (!w && !h) {
+                gl.xres = getWinAttr.width;
+                gl.yres = getWinAttr.height;
+                XGrabKeyboard(dpy, root, False,
+                        GrabModeAsync, GrabModeAsync, CurrentTime);
+                fullscreen = 1;
+            }
+
+            XVisualInfo *vi = glXChooseVisual(dpy, 0, att);
+            if (vi == NULL) {
+                std::cout << "\n\tno appropriate visual found\n" << std::endl;
+                exit(EXIT_FAILURE);
+            }
+
+            Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
+            swa.colormap = cmap;
+            swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
+                PointerMotionMask | MotionNotify | ButtonPressMask | ButtonReleaseMask |
+                StructureNotifyMask | SubstructureNotifyMask;
+
+            unsigned int winops = CWBorderPixel | CWColormap | CWEventMask;
+            if (fullscreen) {
+                winops |= CWOverrideRedirect;
+                swa.override_redirect = True;
+            }
+
+            win = XCreateWindow(dpy, root, 0, 0, gl.xres, gl.yres, 0,
+                    vi->depth, InputOutput, vi->visual, winops, &swa);
+
+            set_title();
+            glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
+            glXMakeCurrent(dpy, win, glc);
+            //show_mouse_cursor(gl.mouse_cursor_on);
         }
 
-        Window root = DefaultRootWindow(dpy);
-        XWindowAttributes getWinAttr;
-        XGetWindowAttributes(dpy, root, &getWinAttr);
-
-        int fullscreen = 0;
-        gl.xres = w;
-        gl.yres = h;
-
-        if (!w && !h) {
-            gl.xres = getWinAttr.width;
-            gl.yres = getWinAttr.height;
-            XGrabKeyboard(dpy, root, False,
-                GrabModeAsync, GrabModeAsync, CurrentTime);
-            fullscreen = 1;
+        ~X11_wrapper() {
+            XDestroyWindow(dpy, win);
+            XCloseDisplay(dpy);
         }
 
-        XVisualInfo *vi = glXChooseVisual(dpy, 0, att);
-        if (vi == NULL) {
-            std::cout << "\n\tno appropriate visual found\n" << std::endl;
-            exit(EXIT_FAILURE);
+        void set_title() {
+            XMapWindow(dpy, win);
+            XStoreName(dpy, win, "CMPS 4490 - Game Project");
         }
 
-        Colormap cmap = XCreateColormap(dpy, root, vi->visual, AllocNone);
-        swa.colormap = cmap;
-        swa.event_mask = ExposureMask | KeyPressMask | KeyReleaseMask |
-            PointerMotionMask | MotionNotify | ButtonPressMask | ButtonReleaseMask |
-            StructureNotifyMask | SubstructureNotifyMask;
-
-        unsigned int winops = CWBorderPixel | CWColormap | CWEventMask;
-        if (fullscreen) {
-            winops |= CWOverrideRedirect;
-            swa.override_redirect = True;
+        void check_resize(XEvent *e) {
+            if (e->type != ConfigureNotify)
+                return;
+            XConfigureEvent xce = e->xconfigure;
+            if (xce.width != gl.xres || xce.height != gl.yres) {
+                reshape_window(xce.width, xce.height);
+            }
         }
 
-        win = XCreateWindow(dpy, root, 0, 0, gl.xres, gl.yres, 0,
-            vi->depth, InputOutput, vi->visual, winops, &swa);
-
-        set_title();
-        glc = glXCreateContext(dpy, vi, NULL, GL_TRUE);
-        glXMakeCurrent(dpy, win, glc);
-        //show_mouse_cursor(gl.mouse_cursor_on);
-    }
-
-    ~X11_wrapper() {
-        XDestroyWindow(dpy, win);
-        XCloseDisplay(dpy);
-    }
-
-    void set_title() {
-        XMapWindow(dpy, win);
-        XStoreName(dpy, win, "CMPS 4490 - Game Project");
-    }
-
-    void check_resize(XEvent *e) {
-        if (e->type != ConfigureNotify)
-            return;
-        XConfigureEvent xce = e->xconfigure;
-        if (xce.width != gl.xres || xce.height != gl.yres) {
-            reshape_window(xce.width, xce.height);
-        }
-    }
-
-    void reshape_window(int width, int height) {
-        setup_screen_res(width, height);
-        glViewport(0, 0, (GLint)width, (GLint)height);
-        glMatrixMode(GL_PROJECTION);
-        glLoadIdentity();
-        glMatrixMode(GL_MODELVIEW);
-        glLoadIdentity();
-        glOrtho(0, gl.xres, 0, gl.yres, -1, 1);
-        set_title();
-    }
-
-    void setup_screen_res(const int w, const int h) {
-        gl.xres = w;
-        gl.yres = h;
-    }
-
-    void swapBuffers() {
-        glXSwapBuffers(dpy, win);
-    }
-
-    bool getXPending() {
-        return XPending(dpy);
-    }
-
-    XEvent getXNextEvent() {
-        XEvent e;
-        XNextEvent(dpy, &e);
-        return e;
-    }
-
-    void show_mouse_cursor(const int onoff) {
-        if (onoff) {
-            XUndefineCursor(dpy, win);
-            return;
+        void reshape_window(int width, int height) {
+            setup_screen_res(width, height);
+            glViewport(0, 0, (GLint)width, (GLint)height);
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            glMatrixMode(GL_MODELVIEW);
+            glLoadIdentity();
+            glOrtho(0, gl.xres, 0, gl.yres, -1, 1);
+            set_title();
         }
 
-        Pixmap blank;
-        XColor dummy;
-        char data[1] = {0};
-        Cursor cursor;
+        void setup_screen_res(const int w, const int h) {
+            gl.xres = w;
+            gl.yres = h;
+        }
 
-        blank = XCreateBitmapFromData(dpy, win, data, 1, 1);
-        if (blank == None)
-            std::cout << "error: out of memory." << std::endl;
+        void swapBuffers() {
+            glXSwapBuffers(dpy, win);
+        }
 
-        cursor = XCreatePixmapCursor(dpy, blank, blank, &dummy, &dummy, 0, 0);
-        XFreePixmap(dpy, blank);
-        XDefineCursor(dpy, win, cursor);
-    }
+        bool getXPending() {
+            return XPending(dpy);
+        }
+
+        XEvent getXNextEvent() {
+            XEvent e;
+            XNextEvent(dpy, &e);
+            return e;
+        }
+
+        void show_mouse_cursor(const int onoff) {
+            if (onoff) {
+                XUndefineCursor(dpy, win);
+                return;
+            }
+
+            Pixmap blank;
+            XColor dummy;
+            char data[1] = {0};
+            Cursor cursor;
+
+            blank = XCreateBitmapFromData(dpy, win, data, 1, 1);
+            if (blank == None)
+                std::cout << "error: out of memory." << std::endl;
+
+            cursor = XCreatePixmapCursor(dpy, blank, blank, &dummy, &dummy, 0, 0);
+            XFreePixmap(dpy, blank);
+            XDefineCursor(dpy, win, cursor);
+        }
 } x11(gl.xres, gl.yres);
 
 // prototypes
@@ -455,7 +455,7 @@ int main()
         }
 
         render();
-        
+
         ++gl.nframes;
         int tmp = time(NULL);
         if (seconds != tmp) {
@@ -501,10 +501,10 @@ void check_mouse(XEvent *e)
     if (e->type == MotionNotify) {
         gl.mouse_x = e->xmotion.x;
         gl.mouse_y = gl.yres - e->xmotion.y;
-        gl.mouse_y_down = e->xmotion.y; 
+        gl.mouse_y_down = e->xmotion.y;
     }
     if (e->type == ButtonPress) {
-        if (e->xbutton.button == 1) { 
+        if (e->xbutton.button == 1) {
             if (gl.state == STATE_TITLE) {
                 checkTitleClick(e->xbutton.x, e->xbutton.y);
             }
@@ -536,6 +536,47 @@ int check_keys(XEvent *e)
     return 0;
 }
 
+
+void resetGame() {
+    // Reset player stats and position
+    player.pos[0] = gl.xres / 2.0f;
+    player.pos[1] = gl.yres / 2.0f;
+    player.health = player.maxHealth;
+    player.damageCooldown = 0;
+    player.flashTimer = 0;
+    player.angle = 0.0f;
+
+    // Reset global game stats
+    gl.score = 0;
+    gl.gameTimer = 0.0;
+    gl.freezeTimer = 0.0;
+
+    // Reset rounds and zombies
+    roundManager.init();
+    nzombies = 0;
+    for (int i = 0; i < MAX_ZOMBIES; i++) {
+        zombie[i].alive = false;
+        zombie[i].health = 0.0f;
+    }
+
+    bulletManager.nbullets = 0;
+
+    // Reset power-ups
+    nukePowerUp.active = false;
+    nukePowerUp.explosionTimer = 0.0f;
+    freezePowerUp.active = false;
+    freezePowerUp.explosionTimer = 0.0f;
+
+    for (int i = 0; i < MAX_FLOATING; i++) {
+        floatingTexts[i].active = false;
+    }
+
+    memset(gl.keys, 0, 65536);
+
+    gl.state = STATE_GAME;
+}
+
+
 void physics()
 {
     if (gl.state == STATE_TITLE) {
@@ -552,16 +593,14 @@ void physics()
 
     // activate game over screen
     if (gl.state == STATE_GAMEOVER) {
-        // renderGameOver();
+        if (gl.keys[XK_r] || gl.keys[XK_R]) {
+            resetGame();
+        }
+        if (gl.keys[XK_q] || gl.keys[XK_Q]) {
+            gl.done = true;
+        }
         return;
     }
-
-    if (player.health <= 0.0f) {
-        player.health = 0.0f;
-        gl.state = STATE_GAMEOVER;
-        return;
-    }
-    
     gl.gameTimer += physicsRate;
     player.update();
 
@@ -573,7 +612,7 @@ void physics()
         for (int i=0; i<nzombies; i++)
             zombie[i].update();
     }
-    
+
     // floating text update
     for (int i = 0; i < MAX_FLOATING; i++) {
         if (!floatingTexts[i].active) continue;
@@ -585,8 +624,8 @@ void physics()
 
 
     checkCollisions();
-    
-   // check for player's health to determine game over screen 
+
+    // check for player's health to determine game over screen
     if (player.health <= 0.0f) {
         player.health = 0.0f;
         gl.state = STATE_GAMEOVER;
@@ -633,10 +672,10 @@ void renderBackground()
     glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 
     glBegin(GL_QUADS);
-        glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0f,      0.0f);
-        glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0f,      gl.yres);
-        glTexCoord2f(1.0f, 0.0f); glVertex2f(gl.xres,   gl.yres);
-        glTexCoord2f(1.0f, 1.0f); glVertex2f(gl.xres,   0.0f);
+    glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0f,      0.0f);
+    glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0f,      gl.yres);
+    glTexCoord2f(1.0f, 0.0f); glVertex2f(gl.xres,   gl.yres);
+    glTexCoord2f(1.0f, 1.0f); glVertex2f(gl.xres,   0.0f);
     glEnd();
 
     glBindTexture(GL_TEXTURE_2D, 0);
@@ -647,10 +686,10 @@ void renderMouseCrosshair()
     glDisable(GL_TEXTURE_2D);
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_LINES);
-        glVertex2f(gl.mouse_x - 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x + 8, gl.mouse_y);
-        glVertex2f(gl.mouse_x, gl.mouse_y - 8);
-        glVertex2f(gl.mouse_x, gl.mouse_y + 8);
+    glVertex2f(gl.mouse_x - 8, gl.mouse_y);
+    glVertex2f(gl.mouse_x + 8, gl.mouse_y);
+    glVertex2f(gl.mouse_x, gl.mouse_y - 8);
+    glVertex2f(gl.mouse_x, gl.mouse_y + 8);
     glEnd();
     glEnable(GL_TEXTURE_2D);
 }
@@ -661,13 +700,13 @@ void render()
         renderTitle();
         return;
     }
-        
-    glClearColor(0.0, 0.0, 0.0, 1.0); 
+
+    glClearColor(0.0, 0.0, 0.0, 1.0);
     glClear(GL_COLOR_BUFFER_BIT);
-    
+
     Rect r, r2;
     renderBackground();
-    
+
     // render player
     if (gl.state != STATE_GAMEOVER) {
         player.render();
@@ -676,16 +715,16 @@ void render()
     // render zombies
     for (int i=0; i<nzombies; i++)
         zombie[i].render();
-    
+
     // render power ups
     nukePowerUp.render();
     freezePowerUp.render();
 
-    // bullets and crosshair 
+    // bullets and crosshair
     bulletManager.render();
     renderMouseCrosshair();
     glEnable(GL_TEXTURE_2D);
-    
+
     // reset state before text
     glDisable(GL_BLEND);
     glEnable(GL_TEXTURE_2D);
@@ -695,7 +734,7 @@ void render()
     r.bot = gl.yres - 40;
     r.left = 10;
     r.center = 0;
-    
+
     r2.bot = gl.yres - 40;
     r2.left = gl.xres / 2;
     r2.center = 1;
@@ -709,7 +748,7 @@ void render()
     int minutes = (totalSeconds % 3600) / 60;
     int seconds = totalSeconds % 60;
 
-        
+
     // background for round/timer
     float boxWidth  = 300.0f;
     float boxHeight = 90.0f;
@@ -723,22 +762,22 @@ void render()
     glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
     glColor4f(0.0f, 0.0f, 0.0f, 0.6f);
     glBegin(GL_QUADS);
-        glVertex2f(boxX, boxY);
-        glVertex2f(boxX + boxWidth, boxY);
-        glVertex2f(boxX + boxWidth, boxY + boxHeight);
-        glVertex2f(boxX, boxY + boxHeight);
+    glVertex2f(boxX, boxY);
+    glVertex2f(boxX + boxWidth, boxY);
+    glVertex2f(boxX + boxWidth, boxY + boxHeight);
+    glVertex2f(boxX, boxY + boxHeight);
     glEnd();
 
     // white border
     glColor3f(1.0f, 1.0f, 1.0f);
     glBegin(GL_LINE_LOOP);
-        glVertex2f(boxX, boxY);
-        glVertex2f(boxX + boxWidth, boxY);
-        glVertex2f(boxX + boxWidth, boxY + boxHeight);
-        glVertex2f(boxX, boxY + boxHeight);
+    glVertex2f(boxX, boxY);
+    glVertex2f(boxX + boxWidth, boxY);
+    glVertex2f(boxX + boxWidth, boxY + boxHeight);
+    glVertex2f(boxX, boxY + boxHeight);
     glEnd();
 
-    ggprint(&r2, 32, 32, 0xffffffff, "Round: %i\n - %02i:%02i:%02i\n", 
+    ggprint(&r2, 32, 32, 0xffffffff, "Round: %i\n - %02i:%02i:%02i\n",
             roundManager.currentRound, hours, minutes, seconds);
 
     // floating text
@@ -752,46 +791,44 @@ void render()
         rf.center = 0;
         if (floatingTexts[i].points >= 100)
             ggprint(&rf, 14, 0, 0x0000ff00, "+%i", floatingTexts[i].points);
-        else    
+        else
             ggprint(&rf, 14, 0, 0x00ffffff, "+%i", floatingTexts[i].points);
     }
-    
+
     // render health bar
     glDisable(GL_TEXTURE_2D);
     player.renderHealthBar();
-    
+
     if (gl.state == STATE_GAMEOVER) {
         glDisable(GL_TEXTURE_2D);
 
         float boxW = gl.xres * 0.78f;
-        float boxH = 230.0f;
+        float boxH = 280.0f;
         float boxX = (gl.xres - boxW) / 2.0f;
         float boxY = (gl.yres - boxH) / 2.0f + 20.0f;
 
-        // Black box
         glColor3f(0.0f, 0.0f, 0.0f);
         glBegin(GL_QUADS);
-            glVertex2f(boxX,        boxY);
-            glVertex2f(boxX + boxW, boxY);
-            glVertex2f(boxX + boxW, boxY + boxH);
-            glVertex2f(boxX,        boxY + boxH);
+        glVertex2f(boxX,        boxY);
+        glVertex2f(boxX + boxW, boxY);
+        glVertex2f(boxX + boxW, boxY + boxH);
+        glVertex2f(boxX,        boxY + boxH);
         glEnd();
 
-        // Red border
         glLineWidth(5.0f);
         glColor3f(1.0f, 0.0f, 0.0f);
         glBegin(GL_LINE_LOOP);
-            glVertex2f(boxX,        boxY);
-            glVertex2f(boxX + boxW, boxY);
-            glVertex2f(boxX + boxW, boxY + boxH);
-            glVertex2f(boxX,        boxY + boxH);
+        glVertex2f(boxX,        boxY);
+        glVertex2f(boxX + boxW, boxY);
+        glVertex2f(boxX + boxW, boxY + boxH);
+        glVertex2f(boxX,        boxY + boxH);
         glEnd();
         glLineWidth(1.0f);
 
         Rect r;
         r.center = 1;
         r.left = gl.xres / 2;
-        r.bot = boxY + 145.0f;
+        r.bot = boxY + 200.0f;
 
         Rect shadow = r;
         shadow.left += 5;
@@ -799,12 +836,15 @@ void render()
         ggprint(&shadow, 90, 0, 0x00000000, "GAME OVER");
 
         ggprint(&r, 90, 0, 0x00ff0000, "GAME OVER");
-    
-        r.bot -= 40;
-        ggprint(&r, 30, 0, 0x00ffffff, "Final Score: %i", gl.score);
 
         r.bot -= 60;
+        ggprint(&r, 30, 0, 0x00ffffff, "Final Score: %i", gl.score);
+
+        r.bot -= 50;
         ggprint(&r, 30, 0, 0x00ffffff, "Press R to restart");
+
+        r.bot -= 40;
+        ggprint(&r, 30, 0, 0x00ffffff, "Press Q or ESC to quit");
 
         glEnable(GL_TEXTURE_2D);
         return;
