@@ -61,9 +61,12 @@ double shootAnimTimer = 0.0;
 struct timespec lastBulletStamp;
 
 // helper functions for sprite/background loading
+// https://man7.org/linux/man-pages/man2/stat.2.html
 bool fileExists(const std::string &path)
 {
+    // use system call to check if file exists on disk
     struct stat st;
+    // stat returns 0 if file exists otherwise returns error
     return (stat(path.c_str(), &st) == 0);
 }
 
@@ -80,23 +83,31 @@ bool bulletTimerChanged(const struct timespec &a, const struct timespec &b)
     return (a.tv_sec != b.tv_sec || a.tv_nsec != b.tv_nsec);
 }
 
+// https://en.cppreference.com/cpp/string/basic_string
+// https://en.cppreference.com/c/io/fscanf
 std::string remapSpriteFilename(const std::string &path)
 {
+    // if the file already exists just use it
     if (fileExists(path))
         return path;
 
+    // find the last slash to separate folder and filename
     size_t slash = path.find_last_of('/');
     if (slash == std::string::npos)
         return path;
 
+    // split into folder and file name
     std::string folder = path.substr(0, slash);
     std::string name   = path.substr(slash + 1);
 
+    // extract frame number from names like 0 png 1 png etc
     int frameNum = -1;
     if (std::sscanf(name.c_str(), "%d.png", &frameNum) != 1)
         return path;
 
     std::string alt;
+
+    // remap zombie sprite filenames to match actual asset naming
     if (folder.find("zombie") != std::string::npos || folder.find("zombies") != std::string::npos) {
         if (folder.find("idle") != std::string::npos) {
             alt = folder + "/skeleton-idle_" + std::to_string(frameNum) + ".png";
@@ -105,7 +116,9 @@ std::string remapSpriteFilename(const std::string &path)
         } else if (folder.find("attack") != std::string::npos) {
             alt = folder + "/skeleton-attack_" + std::to_string(frameNum) + ".png";
         }
-    } else if (folder.find("idle") != std::string::npos) {
+    }
+    // remap player sprite filenames
+    else if (folder.find("idle") != std::string::npos) {
         alt = folder + "/survivor-idle_rifle_" + std::to_string(frameNum) + ".png";
     } else if (folder.find("move") != std::string::npos) {
         alt = folder + "/survivor-move_rifle_" + std::to_string(frameNum) + ".png";
@@ -115,14 +128,16 @@ std::string remapSpriteFilename(const std::string &path)
         return path;
     }
 
-
+    // if the remapped file exists use it instead
     if (fileExists(alt))
         return alt;
 
+    // fallback to original path if remap fails
     return path;
 }
 
-// this is the exact function sprite.cpp is expecting
+// this function uses imagemagick to read png files, extract raw pixel data, 
+// and then uploads that data to the gpu as an opengl texture
 int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
 {
     std::string finalPath = remapSpriteFilename(filename);
@@ -134,13 +149,16 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
     char cmd[1024];
     int imgW = 0;
     int imgH = 0;
-
+    // use imagemagick identify to get image width and height
+    // https://imagemagick.org/identify/#gsc.tab=0
     std::snprintf(cmd, sizeof(cmd),
-            "identify -format \"%%w %%h\" \"%s\" 2>/dev/null", finalPath.c_str());
+        "identify -format \"%%w %%h\" \"%s\" 2>/dev/null", finalPath.c_str());
+    // https://pubs.opengroup.org/onlinepubs/009696799/functions/popen.html
     FILE *fpInfo = popen(cmd, "r");
     if (!fpInfo)
         return 0;
-
+    // read width and height from command output
+    // https://www.geeksforgeeks.org/c/scanf-and-fscanf-in-c/ 
     if (fscanf(fpInfo, "%d %d", &imgW, &imgH) != 2) {
         pclose(fpInfo);
         return 0;
@@ -149,22 +167,25 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
 
     if (imgW <= 0 || imgH <= 0)
         return 0;
-
+    // allocate buffer to store rgba pixel data
     std::vector<unsigned char> pixels(imgW * imgH * 4);
-
+    // use imagemagick convert to output raw rgba pixel data
     std::snprintf(cmd, sizeof(cmd),
-            "convert \"%s\" -alpha on rgba:- 2>/dev/null", finalPath.c_str());
+        "convert \"%s\" -alpha on rgba:- 2>/dev/null", finalPath.c_str());
     FILE *fpData = popen(cmd, "r");
     if (!fpData)
         return 0;
-
+    // read pixel data into buffer
     size_t needed = pixels.size();
+    // store data
     size_t got = fread(&pixels[0], 1, needed, fpData);
     pclose(fpData);
 
     if (got != needed)
         return 0;
-
+    // create and configure an opengl texture then upload the image pixel... 
+    // ...data to the gpu so it can be used for rendering sprites
+    // https://learnopengl.com/Getting-started/Textures
     glGenTextures(1, &tex);
     glBindTexture(GL_TEXTURE_2D, tex);
     glPixelStorei(GL_UNPACK_ALIGNMENT, 1);
@@ -172,9 +193,10 @@ int loadTexturePNG_UsingImageMagick(const char *filename, GLuint &tex)
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+    // after getting pixel data, upload to GPU as a texture
+    // https://wikis.khronos.org/opengl/GLAPI/glTexImage2D
     glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, imgW, imgH, 0,
-            GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
-
+                 GL_RGBA, GL_UNSIGNED_BYTE, &pixels[0]);
     return 1;
 }
 
