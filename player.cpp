@@ -55,6 +55,7 @@ void Player::update()
         moveY /= len;
     }
 
+    // move character position
     pos[0] += moveX * speed;
     pos[1] += moveY * speed;
     
@@ -171,10 +172,13 @@ void Player::render()
         float angleDegrees = angle * 180.0f / (float)PI;
 
         glPushMatrix();
+        // this positions & rotates the player
         glTranslatef(pos[0], pos[1], 0.0f);
         glRotatef(angleDegrees, 0.0f, 0.0f, 1.0f);
 
         glEnable(GL_BLEND);
+        // final color = source * alpha + background * (1 - alpha)
+        // this lets PNG pixels with alpha blend smoothly into the scene
         glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
         glEnable(GL_TEXTURE_2D);
 
@@ -183,12 +187,15 @@ void Player::render()
         else
             glColor4f(1.0f, 1.0f, 1.0f, 1.0f);  // normal sprite
 
+        // this chooses the frame, otherwise a plain colored... 
+        // ...rectangle is rendered down below
         glBindTexture(GL_TEXTURE_2D,
             currentPlayerSprite->tex[currentPlayerSprite->currentFrame]);
 
         float sw = currentPlayerSprite->frameWidth / 2.0f;
         float sh = currentPlayerSprite->frameHeight / 2.0f;
 
+         // draw a rectangle & map the texture onto it
         glBegin(GL_QUADS);
             glTexCoord2f(0, 1); glVertex2f(-sw, -sh);
             glTexCoord2f(0, 0); glVertex2f(-sw,  sh);
